@@ -13,3 +13,5 @@
 7. **During the data ingestion process using PySpark, if you encounter data skew that causes certain partitions to process significantly slower than others, how would you detect the skew at the ingestion layer and what techniques would you apply to mitigate it?**
 
 8. **During the data ingestion process using PySpark, how would you design and implement a comprehensive data quality framework to cleanse, impute missing values, and validate incoming data for inconsistencies or incompleteness?**
+
+**Describe how you would handle joining two DataFrames on a nullable column, including potential issues like null mismatches and strategies such as replacing nulls with sentinel values or using custom join conditions to ensure accurate results.**
