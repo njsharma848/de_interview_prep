@@ -5,3 +5,5 @@
 3. **You need to build an incremental data pipeline using PySpark that captures inserts, updates, and deletes from a source system. How would you implement CDC (Change Data Capture) logic to identify changes and synchronize them with the target data system while maintaining data consistency?**
 
 4. **Describe a robust solution for schema evolution in PySpark job that addresses: automatic schema detection and inference, schema validation and compatibility checks, handling of schema mismatches and versioning strategies.**
+
+5. **Your production Spark job is failing due to memory pressure during join operations on datasets with billions of records. Walk through your troubleshooting process and explain the specific optimizations you would apply, including partitioning strategies, join type selection, data skew handling, and resource configuration adjustments.**
