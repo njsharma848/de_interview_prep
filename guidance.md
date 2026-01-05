@@ -12,19 +12,19 @@
 
 **Then there is a new set of problems that occur, and when you solve them, you will learn tons of other things, things that actually matter in real-life projects:**
 
-◉ **When the failures happen, will you know about it?**
+1. **When the failures happen, will you know about it?**
 
 → **You learn about observability: logging, monitoring, alerting**
 
-◉ **What happens when the pipeline fails?**
+2. **What happens when the pipeline fails?**
 
 → **You learn about fault-tolerance: can be the pipeline self-heal, is there any corrupt data when retry happens (idempotency). Can I backfill the data?**
 
-◉ **When the volume data increases, how do you deal with it?**
+3. **When the volume data increases, how do you deal with it?**
 
 → **You learn about resource planning: does the solution support horizontal scaling, and how many resources should I add to ensure the data latency requirement**
 
-◉ **When bad records appear, what will you do?**
+4. **When bad records appear, what will you do?**
 
 → **You learn about data quality.**
 
