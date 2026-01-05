@@ -30,9 +30,7 @@
 
 ...
 
-**Just break things, in any creative way you can imagine.**
-
-**(and don't forget to solve them)**
+**Just break things, in any creative way you can imagine, and don't forget to solve them**
 
 ---
 
