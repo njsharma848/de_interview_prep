@@ -11,3 +11,5 @@
 6. **When ingesting multi-level nested JSON files into a data system using PySpark, what systematic approach would you use to flatten deeply nested structures into a relational format? Describe your strategy for handling arrays, nested objects, varying nesting depths.**
 
 7. **During the data ingestion process using PySpark, if you encounter data skew that causes certain partitions to process significantly slower than others, how would you detect the skew at the ingestion layer and what techniques would you apply to mitigate it?**
+
+8. **During the data ingestion process using PySpark, how would you design and implement a comprehensive data quality framework to cleanse, impute missing values, and validate incoming data for inconsistencies or incompleteness?**
