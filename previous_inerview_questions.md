@@ -9,3 +9,5 @@
 5. **Your production Spark job is failing due to memory pressure during join operations on datasets with billions of records. Walk through your troubleshooting process and explain the specific optimizations you would apply, including partitioning strategies, join type selection, data skew handling, and resource configuration adjustments.**
 
 6. **When ingesting multi-level nested JSON files into a data system using PySpark, what systematic approach would you use to flatten deeply nested structures into a relational format? Describe your strategy for handling arrays, nested objects, varying nesting depths.**
+
+7. **During the data ingestion process using PySpark, if you encounter data skew that causes certain partitions to process significantly slower than others, how would you detect the skew at the ingestion layer and what techniques would you apply to mitigate it?**
