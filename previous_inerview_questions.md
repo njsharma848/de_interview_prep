@@ -1,1 +1,1 @@
-1. **I'm working with two PySpark files where File A creates a SparkSession. How can I import or reference this existing SparkSession in File B to avoid creating duplicate sessions and ensure I'm working with the same Spark context?**
+1. **I am working with two PySpark files where *File-A* creates a SparkSession. How can I import or reference this existing SparkSession in *File-B* to avoid creating duplicate sessions and ensure I'm working with the same Spark context?**
