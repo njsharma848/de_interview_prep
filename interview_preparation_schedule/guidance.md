@@ -22,7 +22,7 @@
 
 3. **When the volume data increases, how do you deal with it?**
 
-- **You learn about resource planning: does the solution support horizontal scaling, and how many resources should I add to ensure the data latency requirement**
+- **You learn about resource planning: does the solution support horizontal scaling, and how many resources should I add to ensure the data latency requirement.**
 
 4. **When bad records appear, what will you do?**
 
