@@ -4,7 +4,7 @@
 
 3. **You need to build an incremental data pipeline using PySpark that captures inserts, updates, and deletes from a source system. How would you implement CDC (Change Data Capture) logic to identify changes and synchronize them with the target data system while maintaining data consistency?**
 
-4. **In a production PySpark streaming ingestion pipeline, upstream source systems frequently update their schemas without prior notice. How would you architect the ingestion layer to automatically detect, validate, and accommodate these schema changes in real-time? What techniques and frameworks would you implement—such as schema registry integration (Confluent/AWS Glue), schema inference and merging strategies, Delta Lake schema evolution features, or schema validation frameworks—to ensure continuous data ingestion without manual intervention, pipeline failures, or data loss?**
+4. **In a production PySpark streaming ingestion pipeline, upstream source systems frequently update their schemas without prior notice. How would you architect the ingestion layer to automatically detect, validate, and accommodate these schema changes in real-time?**
 
 5. **Your production Spark job is failing due to memory pressure during join operations on datasets with billions of records. Walk through your troubleshooting process and explain the specific optimizations you would apply, including partitioning strategies, join type selection, data skew handling, and resource configuration adjustments.**
 
