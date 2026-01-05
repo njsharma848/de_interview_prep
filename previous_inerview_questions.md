@@ -2,4 +2,4 @@
 
 2. **Given a poorly performing SQL statement, how would you approach its optimization? Consider aspects such as query execution plans, indexing strategies, join operations, and query rewriting techniques in your answer.**
 
-3. **You need to build an incremental data pipeline using PySpark that captures inserts, updates, and deletes from a source system. How would you implement CDC logic to identify changes and synchronize them with the target data store while maintaining data consistency?**
+3. **You need to build an incremental data pipeline using PySpark that captures inserts, updates, and deletes from a source system. How would you implement CDC (Change Data Capture) logic to identify changes and synchronize them with the target data store while maintaining data consistency?**
