@@ -14,7 +14,7 @@
 
 1. **When the failures happen, will you know about it?**
 
-- **You learn about observability: logging, monitoring, alerting**
+- **You learn about observability: logging, monitoring, alerting.**
 
 2. **What happens when the pipeline fails?**
 
