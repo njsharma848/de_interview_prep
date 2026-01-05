@@ -28,10 +28,8 @@
 
 - **You learn about data quality.**
 
-...
-
+---
 **Just break things, in any creative way you can imagine, and don't forget to solve them**
 
----
-
 https://vutr.substack.com/
+---
