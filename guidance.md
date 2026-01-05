@@ -14,19 +14,19 @@
 
 1. **When the failures happen, will you know about it?**
 
-a. **You learn about observability: logging, monitoring, alerting**
+- **You learn about observability: logging, monitoring, alerting**
 
 2. **What happens when the pipeline fails?**
 
-a. **You learn about fault-tolerance: can be the pipeline self-heal, is there any corrupt data when retry happens (idempotency). Can I backfill the data?**
+- **You learn about fault-tolerance: can be the pipeline self-heal, is there any corrupt data when retry happens (idempotency). Can I backfill the data?**
 
 3. **When the volume data increases, how do you deal with it?**
 
-a. **You learn about resource planning: does the solution support horizontal scaling, and how many resources should I add to ensure the data latency requirement**
+- **You learn about resource planning: does the solution support horizontal scaling, and how many resources should I add to ensure the data latency requirement**
 
 4. **When bad records appear, what will you do?**
 
-a. **You learn about data quality.**
+- **You learn about data quality.**
 
 ...
 
