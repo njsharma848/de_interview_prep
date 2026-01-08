@@ -1,9 +1,3 @@
-**Welcome Back.**
-
-**In this video, I will talk about Apache Spark Runtime Architecture.**
-
-**So let's start.**
-
 **Apache Spark is a distributed computing platform.**
 
 **However, every Spark application is a distributed application in itself.**
