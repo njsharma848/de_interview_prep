@@ -1,4 +1,4 @@
-# Spark Memory Allocation - Driver and Executor
+# Spark Memory Allocation - Driver and Executor 
 
 Understanding how memory is allocated and managed for Spark drivers and executors.
 
