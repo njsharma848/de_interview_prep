@@ -299,10 +299,10 @@ Executor 4: [Slot 1] [Slot 2] [Slot 3] [Slot 4]
 **Stage with 10 tasks, 16 available slots:**
 
 ```
-Executor 1: [T1] [T2] [T3] [ ]
-Executor 2: [T4] [T5] [T6] [ ]
-Executor 3: [T7] [T8] [ ] [ ]
-Executor 4: [T9] [T10] [ ] [ ]
+Executor 1: [T01] [T02] [T03] [ ]
+Executor 2: [T04] [T05] [T06] [ ]
+Executor 3: [T07] [T08] [ ] [ ]
+Executor 4: [T09] [T10] [ ] [ ]
 ```
 
 - All 10 tasks assigned
