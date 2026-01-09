@@ -1,4 +1,4 @@
-# Spark SQL Engine and Query Planning
+# Spark SQL Engine and Query Planning 
 
 Understanding how Spark processes your queries through the SQL Engine's four-stage optimization pipeline.
 
