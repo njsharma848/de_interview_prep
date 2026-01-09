@@ -1,4 +1,4 @@
-**When talking about a side project, people usually share success stories.**
+**When talking about a side project, people usually share success stories.** 
 
 **Tools are up and running, data is ingested, logics are applied, and numbers are displayed.**
 
