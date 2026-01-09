@@ -68,9 +68,8 @@ df.cache()
 
 **Characteristics:**
 - No arguments
-- Uses default storage level: `MEMORY_AND_DISK`
-- Deserialized format in memory
-- No replication (1× only)
+- Uses default storage level: `MEMORY_AND_DISK` (deserialized, 1× replication)
+- Shorthand for `df.persist(StorageLevel.MEMORY_AND_DISK)`
 
 **Example:**
 ```python
@@ -85,13 +84,12 @@ cached_df = df.cache()
 ```python
 df.persist()
 df.persist(storageLevel)
-df.persist(StorageLevel.MEMORY_ONLY)
 ```
 
 **Characteristics:**
 - Optional `storageLevel` argument
-- Allows customization
-- Same default as cache() if no argument
+- Allows customization of storage behavior
+- Without argument: Same default as cache() (MEMORY_AND_DISK)
 
 **Example:**
 ```python
@@ -324,49 +322,50 @@ spark.conf.set("spark.memory.offHeap.size", "4g")
 **Deserialized (true):**
 ```
 Storage Format: Java Objects
-Memory Usage: Higher (more space)
-CPU Usage: Lower (no deserialization needed)
-Access Speed: Faster
+Memory Usage: Higher (more space, ~2-3× larger)
+CPU Usage: Lower (no deserialization overhead)
+Access Speed: Faster (direct object access)
 ```
 
 **Serialized (false):**
 ```
-Storage Format: Byte Arrays
-Memory Usage: Lower (compact)
-CPU Usage: Higher (must deserialize on access)
-Access Speed: Slower
+Storage Format: Compact Byte Arrays
+Memory Usage: Lower (40-60% space savings)
+CPU Usage: Higher (must deserialize on every access)
+Access Speed: Slower (deserialization overhead)
 ```
 
-**Recommendation:** Keep deserialized (save CPU)
+**Recommendation:** Keep deserialized (default) to save CPU, unless memory constrained
 
 **Important:**
 - Only applies to **memory** storage
-- Disk and off-heap **always serialized**
+- Disk and off-heap **always use serialized** format (no choice)
 
 ---
 
 #### 5. replication
 
-**Purpose:** Number of cached replicas across executors
+**Purpose:** Number of cached replicas distributed across different executors
 
 ```python
-# Single copy
+# Single copy (default, recommended)
 StorageLevel(..., replication=1)
 
-# Three copies on different executors
+# Three copies on three different executors
 StorageLevel(..., replication=3)
 ```
 
-**Benefits of replication:**
-- Better data locality
-- Fault tolerance
-- Faster task scheduling
+**Benefits of replication > 1:**
+- Better data locality (copy may be on same node as task)
+- Fault tolerance (if one executor fails, copy exists elsewhere)
+- Potentially faster task scheduling
 
 **Costs of replication:**
-- More memory usage (3× memory for replication=3)
-- Usually not worth it
+- Multiply memory usage (replication=3 uses 3× memory)
+- Network overhead to replicate data
+- Usually NOT worth the cost
 
-**Recommendation:** Keep at 1 unless specific need
+**Recommendation:** Keep at 1 (single copy) unless you have specific requirements for fault tolerance or data locality
 
 ---
 
@@ -381,15 +380,13 @@ cached_df = df.cache()
 cached_df.count()
 ```
 
-**Storage Level:**
+**What cache() Uses (Fixed - Cannot Be Changed):**
 ```
 Storage Level: Memory Deserialized 1x Replicated
-Translation:
-├─ useDisk: true
-├─ useMemory: true
-├─ useOffHeap: false
-├─ deserialized: true
-└─ replication: 1
+
+Note: cache() always uses this default level.
+You CANNOT customize storage options with cache().
+To customize, use persist() instead (see Example 2).
 ```
 
 **Spark UI:**
@@ -401,7 +398,7 @@ Size on Disk: 0 B (fits in memory)
 
 ---
 
-### Example 2: persist() with Same Level
+### Example 2: persist() with Same Level as cache()
 
 **Code:**
 ```python
@@ -410,6 +407,16 @@ from pyspark import StorageLevel
 df = spark.range(1000000).repartition(10)
 cached_df = df.persist(StorageLevel.MEMORY_AND_DISK)
 cached_df.count()
+```
+
+**Storage Level Translation:**
+```
+StorageLevel.MEMORY_AND_DISK translates to:
+├─ useDisk: true
+├─ useMemory: true
+├─ useOffHeap: false
+├─ deserialized: true
+└─ replication: 1
 ```
 
 **Result:** Identical to cache()
@@ -427,6 +434,8 @@ Size on Disk: 0 B
 **Code:**
 ```python
 df = spark.range(1000000).repartition(10)
+
+# Use serialized storage to save memory
 cached_df = df.persist(StorageLevel.MEMORY_AND_DISK_SER)
 cached_df.count()
 ```
@@ -434,17 +443,18 @@ cached_df.count()
 **Spark UI:**
 ```
 Storage Level: Memory Serialized 1x Replicated
-Size in Memory: 45.0 MB (smaller than 79 MB deserialized!)
+Size in Memory: 45.0 MB (vs 79 MB deserialized = 43% reduction!)
 Size on Disk: 0 B
 ```
 
 **Trade-off:**
-- Saves memory (45 MB vs 79 MB = 43% reduction)
-- Costs CPU (must deserialize on access)
+- ✓ Saves memory: 45 MB vs 79 MB deserialized (43% smaller)
+- ✗ Costs CPU: Must deserialize on each access
+- **When to use:** Memory-constrained clusters, large cached DataFrames
 
 ---
 
-### Example 4: Custom StorageLevel
+### Example 4: Custom StorageLevel Configuration
 
 **Code:**
 ```python
@@ -452,38 +462,52 @@ from pyspark import StorageLevel
 
 df = spark.range(1000000).repartition(10)
 
-# Custom storage level
+# Custom storage level with full control over parameters
 custom_level = StorageLevel(
-    useDisk=True,        # Allow disk spillover
-    useMemory=True,      # Prefer memory
-    useOffHeap=False,    # No off-heap (not configured)
-    deserialized=False,  # Serialized (save memory)
-    replication=1        # Single copy
+    useDisk=True,        # Allow disk spillover if memory full
+    useMemory=True,      # Prefer memory first
+    useOffHeap=False,    # No off-heap (not configured for this app)
+    deserialized=False,  # Serialized format (saves memory, costs CPU)
+    replication=1        # Single copy (no replication)
 )
 
 cached_df = df.persist(custom_level)
 cached_df.count()
 ```
 
+**Storage Level Translation:**
+```
+Custom StorageLevel translates to:
+├─ useDisk: true       → Allows disk spillover
+├─ useMemory: true     → Prefers memory storage
+├─ useOffHeap: false   → No off-heap usage
+├─ deserialized: false → Serialized (compact storage)
+└─ replication: 1      → Single copy only
+```
+
 **Spark UI:**
 ```
 Storage Level: Memory Serialized 1x Replicated
-Size in Memory: 45.0 MB
+Size in Memory: 45.0 MB (smaller due to serialization)
 Size on Disk: 0 B
 ```
 
+**Trade-offs:**
+- ✓ Saves memory: 45 MB vs 79 MB (43% reduction)
+- ✗ Costs CPU: Must deserialize on each access
+
 ---
 
-### Example 5: Insufficient Memory
+### Example 5: Insufficient Memory (Disk Spillover)
 
 **Scenario:** DataFrame too large for available memory
 
 **Code:**
 ```python
-# Huge DataFrame
-df = spark.range(100000000).repartition(100)  # 100M rows, 100 partitions
+# Huge DataFrame: 100M rows, 100 partitions
+df = spark.range(100000000).repartition(100)
 
-# Cache with disk spillover
+# Cache with disk spillover enabled
 cached_df = df.persist(StorageLevel.MEMORY_AND_DISK)
 cached_df.count()
 ```
@@ -492,15 +516,20 @@ cached_df.count()
 ```
 Storage Level: Memory Deserialized 1x Replicated
 Cached Partitions: 75 / 100
-Size in Memory: 7.5 GB (memory full)
-Size on Disk: 2.5 GB (25 partitions spilled)
+Size in Memory: 7.5 GB (memory full!)
+Size on Disk: 2.5 GB (25 partitions spilled to disk)
 Total Size: 10.0 GB
+Fraction Cached: 100% (but split between memory and disk)
 ```
 
 **Behavior:**
-- First 75 partitions fit in memory → cached in memory
-- Remaining 25 partitions don't fit → spilled to disk
-- Whole partitions only (never partial)
+- First 75 partitions fit in memory → cached in memory (fast)
+- Remaining 25 partitions don't fit → spilled to disk (slower)
+- Whole partitions only (never partial partitions)
+
+**Performance Impact:**
+- Accessing memory-cached partitions: Fast
+- Accessing disk-cached partitions: Slower (but still faster than recomputing)
 
 ---
 
@@ -580,18 +609,18 @@ Execution:
 
 ### unpersist() Method
 
-**Remove cached data:**
+**Remove cached data from memory:**
 
 ```python
 # Cache DataFrame
 cached_df = df.cache()
 cached_df.count()  # Triggers caching
 
-# Later: Remove from cache
+# Later: Remove from cache to free memory
 cached_df.unpersist()
 ```
 
-**Note:** Method is `unpersist()`, not `uncache()`
+**Note:** Method is `unpersist()`, NOT `uncache()` (no such method exists)
 
 ### Parameters
 
@@ -700,14 +729,21 @@ result = df.count()
 
 ---
 
-#### 2. Insufficient Memory
+#### 2. Insufficient Memory (DataFrame Won't Fit)
 
 ```python
-# Bad: DataFrame doesn't fit in memory
+# Bad: DataFrame too large for available cache memory
 huge_df = spark.read.parquet("100GB_data.parquet")
-cached_df = huge_df.cache()  # Most will spill to disk anyway
+cached_df = huge_df.cache()  # Will spill most to disk
 
-# Result: Slower than not caching (disk I/O overhead)
+# Most partitions spill to disk anyway
+# Result: SLOWER than not caching (disk I/O overhead + serialization)
+
+# Better alternatives:
+# 1. Don't cache at all
+# 2. Use MEMORY_AND_DISK_SER (more compact)
+# 3. Increase executor memory
+# 4. Cache only subset: huge_df.filter(...).cache()
 ```
 
 ---
@@ -770,17 +806,23 @@ df.cache()  # Doesn't actually cache until action
 
 ---
 
-### 2. Use cache() for Simplicity
+### 2. Use cache() for Simplicity, persist() for Customization
 
 ```python
-# ✓ Good: Simple and clear
+# ✓ Good: Simple caching with defaults
 df.cache()
 
-# ✗ Overly complex (unless needed)
-df.persist(StorageLevel(True, True, False, True, 1))
+# ✓ Good: Custom storage when needed
+df.persist(StorageLevel.MEMORY_AND_DISK_SER)
+
+# ✗ Overly complex: Using StorageLevel() function unnecessarily
+df.persist(StorageLevel(True, True, False, True, 1))  # Hard to read!
+
+# ✓ Better: Use predefined constants
+df.persist(StorageLevel.MEMORY_AND_DISK)  # Clear and readable
 ```
 
-Use `persist()` only when you need customization.
+**Rule:** Use `cache()` for default behavior, `persist()` only when you need customization.
 
 ---
 
@@ -831,26 +873,54 @@ df.persist(StorageLevel.MEMORY_ONLY)  # Can lose partitions!
 ### 6. Avoid Excessive Replication
 
 ```python
-# ✗ Bad: Wastes memory
-df.persist(StorageLevel.MEMORY_ONLY_2)  # 2× memory usage
+# ✗ Bad: Wastes 2× memory for minimal benefit
+df.persist(StorageLevel.MEMORY_AND_DISK_2)  # 2× memory usage
 
-# ✓ Good: Single copy sufficient
-df.persist(StorageLevel.MEMORY_ONLY)  # 1× memory usage
+# ✓ Good: Single copy is sufficient
+df.persist(StorageLevel.MEMORY_AND_DISK)  # 1× memory usage
 ```
 
-Replication rarely justified (Spark handles fault tolerance).
+**Why replication=1 is enough:**
+- Spark already handles fault tolerance via lineage
+- Can recompute lost partitions from source
+- Replication mainly helps with data locality
+- Memory cost (2-3×) rarely justifies the benefit
+
+**When replication > 1 might help:**
+- Very expensive to recompute (complex transformations)
+- Need maximum performance (data locality critical)
+- Have abundant memory available
 
 ---
 
-### 7. Consider Serialization for Large DataFrames
+### 7. Consider Serialization for Memory-Constrained Environments
 
 ```python
-# Large DataFrame, memory constrained
+# Memory-constrained cluster with large DataFrame
 df.persist(StorageLevel.MEMORY_AND_DISK_SER)
 
-# Saves ~40-50% memory
-# Small CPU cost to deserialize
-# Good trade-off for memory-constrained clusters
+# Benefits:
+# ✓ Saves ~40-60% memory
+# ✗ Small CPU cost to deserialize on access
+# 
+# Good trade-off when:
+# - Memory is scarce
+# - DataFrame is large
+# - Reuse frequency is moderate (not every millisecond)
+```
+
+**Benchmark before deciding:**
+```python
+# Test deserialized (default)
+df.persist(StorageLevel.MEMORY_AND_DISK).count()
+# Check: Spark UI → Storage tab → Size
+
+# Test serialized
+df.unpersist()
+df.persist(StorageLevel.MEMORY_AND_DISK_SER).count()
+# Check: Spark UI → Storage tab → Size
+
+# Compare memory usage vs execution time
 ```
 
 ---
