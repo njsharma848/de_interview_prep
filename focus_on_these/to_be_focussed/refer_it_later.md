@@ -72,3 +72,54 @@
 
 5. Which Spark version are you using?
     I am based on knowledge up to June 2024, which includes information about Apache Spark versions up to 3.4.x. If you have a specific version in mind or need details about a particular version, please let me know!
+
+6. When we should use Coalesce and when we should use Repartition in Spark?
+
+   - **Coalesce**: The `coalesce()` function is used to reduce the number of partitions in a DataFrame without performing a full shuffle. It is more efficient than `repartition()` when you want to decrease the number of partitions because it avoids the overhead of data movement across the cluster.
+
+   Example:
+   ```python
+   df = df.coalesce(2)  # Reduces the number of partitions to 2
+   ```
+
+   - **Repartition**: The `repartition()` function is used to increase or decrease the number of partitions in a DataFrame and involves a full shuffle of the data across the cluster. This is useful when you want to evenly distribute data across partitions, especially before performing operations like joins or aggregations.
+
+   Example:
+   ```python
+   df = df.repartition(4)  # Changes the number of partitions to 4 with a shuffle
+   ```
+
+   In summary, use `coalesce()` when reducing partitions without needing a shuffle, and use `repartition()` when you need to change the number of partitions with a shuffle for better data distribution.
+
+7. What are DAGs in Spark?
+
+   A DAG (Directed Acyclic Graph) in Apache Spark is a representation of the sequence of computations that need to be performed on the data. It is a graph where each node represents an RDD (Resilient Distributed Dataset) or DataFrame, and the edges represent the transformations applied to the data.
+
+   When an action (like `collect()`, `count()`, etc.) is called on a DataFrame or RDD, Spark constructs a DAG of all the transformations that need to be executed to produce the final result. The DAG is then optimized and executed in stages across the cluster.
+
+   Key points about DAGs in Spark:
+   - They help in optimizing the execution plan by minimizing data shuffling and improving performance.
+   - They ensure fault tolerance by allowing Spark to recompute lost partitions based on lineage information.
+   - They enable parallel processing by breaking down tasks into smaller units that can be executed concurrently.
+
+   Example:
+   ```python
+   df = spark.read.csv("data.csv")
+   df_filtered = df.filter(df['age'] > 30)
+   df_grouped = df_filtered.groupBy('country').count()
+   result = df_grouped.collect()
+   ```
+
+   In this example, when `collect()` is called, Spark builds a DAG that includes reading the CSV file, filtering rows, grouping by country, and counting the results.
+
+8. What is Tungsten in Spark?
+
+   Tungsten is a project within Apache Spark that focuses on improving the performance and efficiency of Spark's execution engine. It was introduced in Spark 1.4 and aims to optimize memory usage, CPU efficiency, and overall execution speed.
+
+   Key features of Tungsten include:
+   - **Memory Management**: Tungsten introduces a more efficient memory management model that reduces garbage collection overhead by using off-heap memory for storing data.
+   - **Binary Processing**: It uses a binary format for data storage and processing, which reduces serialization and deserialization costs, leading to faster data access and manipulation.
+   - **Code Generation**: Tungsten employs runtime code generation to produce optimized bytecode for specific operations, allowing for faster execution of tasks.
+   - **Cache-aware Computation**: It optimizes data access patterns to take advantage of CPU caches, improving performance for iterative algorithms and complex computations.
+
+   Overall, Tungsten significantly enhances Spark's performance by optimizing low-level operations and reducing overhead, making it suitable for large-scale data processing tasks.
