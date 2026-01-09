@@ -69,3 +69,6 @@
    DELETE FROM employees WHERE id = 1;
    SELECT * FROM employees;
    ```
+
+5. Which Spark version are you using?
+    I am based on knowledge up to June 2024, which includes information about Apache Spark versions up to 3.4.x. If you have a specific version in mind or need details about a particular version, please let me know!
