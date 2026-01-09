@@ -141,3 +141,48 @@
    - **Log Analysis**: Review Spark logs for warnings or errors related to task failures or long-running tasks, which may be symptoms of data skew.
 
    By identifying data skew early, you can take steps to mitigate its impact on your Spark jobs, such as using techniques like salting keys or repartitioning the data.
+
+10. What is catalyst optimizer in Spark?
+
+    The Catalyst optimizer is a key component of Apache Spark's SQL engine that is responsible for optimizing query execution plans. It is designed to improve the performance of SQL queries and DataFrame operations by applying a series of optimization techniques.
+
+    Key features of the Catalyst optimizer include:
+
+    - **Rule-Based Optimization**: Catalyst uses a set of predefined rules to transform logical plans into optimized physical plans. These rules include predicate pushdown, constant folding, and projection pruning.
+
+    - **Cost-Based Optimization**: Catalyst can also use statistics about the data (such as table size and data distribution) to make informed decisions about the best execution plan, minimizing resource usage and execution time.
+
+    - **Extensibility**: The Catalyst framework is highly extensible, allowing developers to add custom optimization rules and strategies to suit specific use cases.
+
+    - **Logical and Physical Plans**: Catalyst separates the logical representation of a query from its physical execution plan. This separation allows for more flexible optimization and execution strategies.
+
+    Overall, the Catalyst optimizer plays a crucial role in enhancing the efficiency and performance of Spark SQL queries, making it a powerful tool for big data processing.
+
+11. Work on recursive common table expressions (CTEs) in SQL?
+      Recursive Common Table Expressions (CTEs) in SQL are used to perform recursive queries, allowing you to work with hierarchical or tree-structured data. A recursive CTE consists of two parts: the anchor member, which defines the base result set, and the recursive member, which references the CTE itself to build upon the results of the previous iteration.
+   
+      Here’s a basic example of how to use a recursive CTE to retrieve all employees in a company hierarchy:
+   
+      ```sql
+      WITH RECURSIVE EmployeeHierarchy AS (
+         -- Anchor member: select the top-level manager
+         SELECT EmployeeID, ManagerID, Name
+         FROM Employees
+         WHERE ManagerID IS NULL
+   
+         UNION ALL
+   
+         -- Recursive member: select employees reporting to the previous level
+         SELECT e.EmployeeID, e.ManagerID, e.Name
+         FROM Employees e
+         INNER JOIN EmployeeHierarchy eh ON e.ManagerID = eh.EmployeeID
+      )
+      SELECT * FROM EmployeeHierarchy;
+      ```
+   
+      In this example:
+      - The anchor member selects employees who do not have a manager (top-level managers).
+      - The recursive member joins the `Employees` table with the `EmployeeHierarchy` CTE to find employees who report to those already included in the hierarchy.
+      - The recursion continues until all levels of the hierarchy are processed.
+   
+      Recursive CTEs are particularly useful for querying organizational structures, bill of materials, and other hierarchical data models.
