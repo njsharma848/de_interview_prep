@@ -441,4 +441,20 @@
       - `explode` transforms array/map columns into multiple rows, omitting nulls.
       - `split` splits a string into an array based on a delimiter.
       - `explode_outer` behaves like `explode` but includes nulls in the output.
-      
+
+18. Why we are using SparkContext in Glue instead of SparkSession?
+
+    In AWS Glue, the use of `SparkContext` instead of `SparkSession` is primarily due to the way Glue is designed to work with Apache Spark. AWS Glue is a managed ETL (Extract, Transform, Load) service that simplifies the process of preparing and loading data for analytics. Here are a few reasons why `SparkContext` is used in Glue:
+
+    1. **Legacy Compatibility**: AWS Glue was initially built on top of Apache Spark 1.x, where `SparkContext` was the primary entry point for Spark applications. Although Spark 2.x introduced `SparkSession` as a unified entry point, Glue has maintained compatibility with `SparkContext` for backward compatibility.
+
+    2. **Glue's Abstraction Layer**: AWS Glue provides its own abstraction layer over Spark, which includes additional features like job bookmarks, dynamic frames, and integration with other AWS services. The Glue job framework manages the underlying Spark context, allowing users to focus on writing ETL logic without needing to manage the Spark session explicitly.
+
+    3. **Simplified Job Management**: By using `SparkContext`, Glue can handle job initialization and resource management more effectively. This allows users to leverage Glue's built-in capabilities for scaling and managing Spark jobs without needing to deal with the complexities of `SparkSession`.
+
+    4. **Dynamic Frames**: AWS Glue introduces the concept of Dynamic Frames, which are an extension of Spark DataFrames. Dynamic Frames provide additional functionality tailored for ETL operations in Glue, and they are designed to work seamlessly with `SparkContext`.
+
+    In summary, while `SparkSession` is the preferred entry point for modern Spark applications, AWS Glue continues to use `SparkContext` due to legacy reasons, its abstraction layer, and the specific requirements of ETL workflows in the Glue environment.
+
+19. Does SparkContext supports dataframe operations?
+    Yes, `SparkContext` supports DataFrame operations in Apache Spark. While `SparkSession` is the preferred entry point for working with DataFrames in Spark 2.x and later, `SparkContext` can still be used to create DataFrames through the `SQLContext` or `HiveContext`.
