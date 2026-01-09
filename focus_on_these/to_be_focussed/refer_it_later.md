@@ -246,3 +246,199 @@
     ```
 
     In this example, when the query is executed, the database will use the `idx_last_name` index to quickly find all employees with the last name 'Smith', improving performance compared to scanning the entire `employees` table.
+
+14. Spark on set operations (Union, Intersect, Except)?
+
+    In Apache Spark, set operations allow you to perform operations on DataFrames that are similar to SQL set operations. The primary set operations available in Spark are `union`, `intersect`, and `except`. Here's a brief overview of each operation:
+
+    1. **Union**:
+       The `union` operation combines the rows of two DataFrames into a single DataFrame. It includes all rows from both DataFrames, and duplicates are retained.
+
+       Example:
+       ```python
+       df1 = spark.createDataFrame([(1, 'Alice'), (2, 'Bob')], ['id', 'name'])
+       df2 = spark.createDataFrame([(2, 'Bob'), (3, 'Charlie')], ['id', 'name'])
+
+       union_df = df1.union(df2)
+       union_df.show()
+       ```
+       Output:
+       ```
+       +---+-------+
+       | id|   name|
+       +---+-------+
+       |  1|  Alice|
+       |  2|    Bob|
+       |  2|    Bob|
+       |  3|Charlie|
+       +---+-------+
+       ```
+
+    2. **Intersect**:
+       The `intersect` operation returns only the rows that are present in both DataFrames. Duplicates are removed in the result.
+
+       Example:
+       ```python
+       intersect_df = df1.intersect(df2)
+       intersect_df.show()
+       ```
+       Output:
+       ```
+       +---+----+
+       | id|name|
+       +---+----+
+       |  2| Bob|
+       +---+----+
+       ```
+
+    3. **Except**:
+       The `except` operation returns the rows that are present in the first DataFrame but not in the second DataFrame. Duplicates are removed in the result.
+
+       Example:
+       ```python
+       except_df = df1.exceptAll(df2)
+       except_df.show()
+       ```
+       Output:
+       ```
+       +---+-----+
+       | id| name|
+       +---+-----+
+       |  1|Alice|
+       +---+-----+
+       ```
+
+    Note: In Spark, `exceptAll` retains duplicates from the first DataFrame that are not present in the second DataFrame, while `except` removes duplicates.
+
+    These set operations are useful for data manipulation and analysis in Spark, allowing you to combine and compare datasets efficiently.
+
+15. What is the difference between Spark SQL and DataFrame API?
+
+    Spark SQL and DataFrame API are both components of Apache Spark that allow for data processing and analysis, but they have some differences in terms of usage and functionality.
+
+    1. **Spark SQL**:
+       - Spark SQL is a module in Apache Spark that allows you to run SQL queries on structured data. It provides a way to interact with Spark using SQL syntax, making it easier for users who are familiar with SQL to work with big data.
+       - You can create temporary views or tables from DataFrames and then run SQL queries against them.
+       - Example:
+       ```python
+       df.createOrReplaceTempView("employees")
+       result = spark.sql("SELECT * FROM employees WHERE age > 30")
+       result.show()
+       ```
+
+    2. **DataFrame API**:
+       - The DataFrame API is a higher-level abstraction in Spark that provides a programmatic way to work with structured data using a domain-specific language (DSL). It allows you to perform operations on DataFrames using methods and functions.
+       - The DataFrame API is more flexible and allows for complex transformations and actions using functional programming concepts.
+       - Example:
+       ```python
+       result = df.filter(df.age > 30)
+       result.show()
+       ```
+
+    In summary, Spark SQL is used for executing SQL queries, while the DataFrame API provides a programmatic way to manipulate data using methods. Both can be used interchangeably, as DataFrames can be queried using SQL and vice versa.
+
+16. How can I import the sparksession created in file1.py into file2.py?
+
+    To import a SparkSession created in `file1.py` into `file2.py`, you can follow these steps:
+
+    1. Ensure that `file1.py` contains the code to create and export the SparkSession. You can define a function or a variable that holds the SparkSession instance.
+
+    Example of `file1.py`:
+    ```python
+    from pyspark.sql import SparkSession
+
+    def get_spark_session():
+        spark = SparkSession.builder \
+            .appName("MyApp") \
+            .getOrCreate()
+        return spark
+    ```
+
+    2. In `file2.py`, you can import the function or variable from `file1.py` and use it to get the SparkSession.
+
+    Example of `file2.py`:
+    ```python
+    from file1 import get_spark_session
+
+    spark = get_spark_session()
+
+    # Now you can use the spark session
+    df = spark.read.csv("data.csv", header=True, inferSchema=True)
+    df.show()
+    ```
+
+    By following these steps, you can successfully import and use the SparkSession created in `file1.py` within `file2.py`.
+
+17. What is the difference between explode, split and explodeout functions in Spark?
+
+    In Apache Spark, `explode`, `split`, and `explode_outer` are functions used for different purposes when working with DataFrames. Here's a brief explanation of each:
+
+    1. **explode**:
+       The `explode` function is used to transform an array or map column into multiple rows. Each element of the array or each key-value pair of the map becomes a separate row in the resulting DataFrame.
+
+       Example:
+       ```python
+       from pyspark.sql.functions import explode
+
+       df = spark.createDataFrame([(1, ["a", "b", "c"]), (2, ["d", "e"])], ["id", "letters"])
+       exploded_df = df.select(df.id, explode(df.letters).alias("letter"))
+       exploded_df.show()
+       ```
+       Output:
+       ```
+       +---+------+
+       | id|letter|
+       +---+------+
+       |  1|     a|
+       |  1|     b|
+       |  1|     c|
+       |  2|     d|
+       |  2|     e|
+       +---+------+
+       ```
+
+    2. **split**:
+       The `split` function is used to split a string column into an array of substrings based on a specified delimiter. It does not change the number of rows but transforms the string into an array.
+
+       Example:
+       ```python
+       from pyspark.sql.functions import split
+
+       df = spark.createDataFrame([(1, "a,b,c"), (2, "d,e")], ["id", "letters"])
+       split_df = df.select(df.id, split(df.letters, ",").alias("letter_array"))
+       split_df.show()
+       ```
+       Output:
+       ```
+       +---+------------+
+       | id|letter_array|
+       +---+------------+
+       |  1|   [a, b, c]|
+       |  2|      [d, e]|
+       +---+------------+
+       ```
+
+    3. **explode_outer**:
+       The `explode_outer` function is similar to `explode`, but it also includes null values in the output. If the input array or map is null or empty, it will produce a row with null values instead of omitting it.
+
+       Example:
+       ```python
+       from pyspark.sql.functions import explode_outer
+         df = spark.createDataFrame([(1, ["a", "b"]), (2, None)], ["id", "letters"])
+         exploded_outer_df = df.select(df.id, explode_outer(df.letters).alias("letter"))
+         exploded_outer_df.show()
+         ```
+       Output:
+         ```       +---+------+
+                  | id|letter|
+                  +---+------+
+                  |  1|     a|
+                  |  1|     b|
+                  |  2|  null|
+                  +---+------+
+         ```   
+      In summary:
+      - `explode` transforms array/map columns into multiple rows, omitting nulls.
+      - `split` splits a string into an array based on a delimiter.
+      - `explode_outer` behaves like `explode` but includes nulls in the output.
+      
