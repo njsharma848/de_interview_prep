@@ -1,4 +1,4 @@
-# Apache Spark Runtime Architecture - Complete Guide
+# Apache Spark Runtime Architecture - Complete Guide 
 
 Understanding how Spark applications run on distributed clusters.
 
