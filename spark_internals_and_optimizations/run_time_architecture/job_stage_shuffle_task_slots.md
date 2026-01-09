@@ -1,4 +1,4 @@
-# Spark Jobs and Stages - Complete Guide
+# Spark Jobs and Stages - Complete Guide 
 
 Understanding how Spark executes your code through jobs, stages, and tasks.
 
