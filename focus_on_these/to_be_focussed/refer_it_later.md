@@ -220,3 +220,29 @@
     # Check for duplicates in the sample
     duplicate_count = sample_df.groupBy("id").count().filter("count > 1").count()
     print(f"Number of duplicate records in sample:
+
+13. How Indexing works in SQL?
+
+    Indexing in SQL is a database optimization technique used to improve the speed of data retrieval operations on a table. An index is a data structure that provides a quick lookup mechanism for rows in a table based on the values of one or more columns. By creating an index on a column, the database can avoid scanning the entire table to find matching rows, significantly reducing query execution time.
+
+    How Indexing Works:
+    1. **Index Creation**: When an index is created on a table column, the database builds a separate data structure (often a B-tree or hash table) that stores the indexed column's values along with pointers to the corresponding rows in the table.
+
+    2. **Query Execution**: When a query is executed that involves a condition on the indexed column (e.g., WHERE clause), the database engine uses the index to quickly locate the relevant rows instead of performing a full table scan.
+
+    3. **Types of Indexes**:
+       - **Single-Column Index**: An index created on a single column.
+       - **Composite Index**: An index created on multiple columns, which can optimize queries that filter on those columns together.
+       - **Unique Index**: An index that enforces uniqueness on the indexed column(s), preventing duplicate values.
+       - **Full-Text Index**: An index designed for searching text-based data efficiently.
+
+    Example:
+    ```sql
+    -- Creating an index on the 'last_name' column of the 'employees' table
+    CREATE INDEX idx_last_name ON employees(last_name);
+
+    -- Query that benefits from the index
+    SELECT * FROM employees WHERE last_name = 'Smith';
+    ```
+
+    In this example, when the query is executed, the database will use the `idx_last_name` index to quickly find all employees with the last name 'Smith', improving performance compared to scanning the entire `employees` table.
