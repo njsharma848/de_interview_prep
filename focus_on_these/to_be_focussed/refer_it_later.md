@@ -186,3 +186,37 @@
       - The recursion continues until all levels of the hierarchy are processed.
    
       Recursive CTEs are particularly useful for querying organizational structures, bill of materials, and other hierarchical data models.
+
+12. How to perform data quality checks on a large dataset vs small dataset while performing transfomations in Spark?
+
+    Performing data quality checks is essential to ensure the integrity and reliability of your datasets, regardless of their size. However, the approach may vary based on whether you're dealing with a large or small dataset. Here are some strategies for both scenarios:
+
+    For Small Datasets:
+    - **In-Memory Processing**: Small datasets can be easily loaded into memory, allowing for quick and interactive data quality checks using Spark DataFrames.
+    - **Basic Validations**: Perform simple checks such as null value detection, data type validation, range checks, and uniqueness constraints using DataFrame operations.
+    - **Exploratory Data Analysis (EDA)**: Use Spark's built-in functions to generate summary statistics, histograms, and visualizations to identify anomalies or outliers.
+    - **Sample-Based Checks**: If the dataset is small enough, you can perform exhaustive checks on the entire dataset without significant performance concerns.
+
+    Example:
+    ```python
+    df = spark.read.csv("small_dataset.csv", header=True, inferSchema=True)
+    # Check for null values
+    null_counts = df.select([F.count(F.when(F.col(c).isNull(), c)).alias(c) for c in df.columns])
+    null_counts.show()
+    ```
+
+    For Large Datasets:
+    - **Distributed Processing**: Leverage Spark's distributed computing capabilities to handle large datasets efficiently. Avoid loading the entire dataset into memory.
+    - **Sampling**: Perform data quality checks on a representative sample of the dataset to identify potential issues without processing the entire dataset.
+    - **Incremental Checks**: Implement incremental data quality checks that validate new or changed data rather than reprocessing the entire dataset.
+    - **Automated Validation Pipelines**: Create automated data quality pipelines that run predefined checks (e.g., schema validation, null checks, range checks) as part of your ETL process.
+    - **Use of Metrics and Dashboards**: Collect data quality metrics and visualize them using dashboards to monitor trends and identify issues over time.
+
+    Example:
+    ```python
+    df = spark.read.parquet("large_dataset.parquet")
+    # Sample 1% of the data for quality checks
+    sample_df = df.sample(fraction=0.01)
+    # Check for duplicates in the sample
+    duplicate_count = sample_df.groupBy("id").count().filter("count > 1").count()
+    print(f"Number of duplicate records in sample:
