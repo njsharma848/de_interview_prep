@@ -1,12 +1,19 @@
-Spark accumulators are part of the Spark low-level APIs.
+# Spark Accumulators
 
-If you are using Spark Dataframe APIs, you are not likely to use accumulators. They were primarily used with the Spark low-level RDD APIs. However, it is essential to understand the concept.
+## Introduction
 
-So let me explain it at a high level. We will use an example code to explain the concept. Let me quickly explain the requirement, and then I will explain the code.
+Spark accumulators are part of the Spark low-level APIs. While they were primarily used with the Spark low-level RDD APIs, it's essential to understand the concept even if you're mainly using Spark DataFrame APIs.
 
-I have a dataframe that looks like this. This dataframe represents an aggregated shipment record. We have a source column, then a destination column, and finally, we have a shipments column. The shipments column represents the number of shipments from the given source to a destination. However, we have a slight problem here. The shipment column is expected to be an integer column. But we have some bad records in this table. I want to fix these bad records. But how do we do it?
+## The Problem: Handling Bad Records
 
-# dataframe
+Consider a DataFrame that represents aggregated shipment records with three columns:
+- **source**: origin location
+- **destination**: destination location  
+- **shipments**: number of shipments (expected to be integer)
+
+### Sample Data
+
+```
 +-------+-----------+---------+
 | source|destination|shipments|
 +-------+-----------+---------+
@@ -16,11 +23,17 @@ I have a dataframe that looks like this. This dataframe represents an aggregated
 | Mexico|     France|       15|
 | Brazil|      Japan|       -25|
 +-------+-----------+---------+
+```
 
-I discussed it with the business team, and they suggested a super simple solution. We are asked to take null if the shipments count is not a valid integer. So I decided to create a UDF for this. Here is the code for the UDF.
+**Problem**: The shipments column contains invalid data (e.g., "abc") that cannot be converted to integers.
 
-# udf to parse shipments
-'''python
+**Solution**: Replace invalid values with `null` after consulting with the business team.
+
+## Initial Solution: Using a UDF
+
+### UDF Implementation
+
+```python
 from pyspark.sql.functions import udf
 
 def handle_bad_records(shipments: str) -> int:
@@ -30,30 +43,50 @@ def handle_bad_records(shipments: str) -> int:
     except ValueError:
         bad_rec.add(1)
     return s
-'''
+```
 
-This UDF simply takes the shipments column, converts it into an integer, and returns it. If we cannot convert the shipments column to an integer, we return null.
+This UDF:
+1. Attempts to convert the shipments value to an integer
+2. Returns `null` if conversion fails
+3. Returns the integer value if successful
 
-How to use this UDF? Here is the code.
-# using the udf
-'''python   
+### Applying the UDF
+
+```python
 spark.udf.register("udf_handle_bad_records", handle_bad_records, IntegerType())
 df = df.withColumn("shipments_fixed", expr("udf_handle_bad_records(shipments)")).show()
-'''
+```
 
-But now, I have another requirement. We also want to count the number of bad records. How to do it? Can you think of some solution? We have an easy way to do it. I can simply count the nulls in the shipments_int column. Correct? We fixed two rows in this dataframe, replacing two bad values with nulls. So If I count the nulls in the new column, I exactly know the number of bad records.
+## The Challenge: Counting Bad Records
 
-The solution is perfectly fine. But count() aggregation or a count() action on a dataframe has a wide dependency. Spark will add one extra stage and a shuffle operation.
+### Naive Approach
 
-My execution plan looks like this.  So you can see this exchange in my execution plan. This exchange represents a shuffle that is caused by the count() operation. And that's not a good thing. I don't like this shuffle exchange in my plan? Can I do something else and avoid this shuffle? I wish I had a global variable to increment it from my UDF while I am fixing the bad record.
+To count bad records, you could count the nulls in the new `shipments_fixed` column. However, this approach has a significant drawback:
 
-And that's precisely what Spark Accumulators are. Spark Accumulator is a global mutable variable that a Spark cluster can safely update on a per-row basis. You can use them to implement counters or sums.
+**Problem**: The `count()` aggregation has a wide dependency, causing Spark to:
+- Add an extra stage
+- Perform a shuffle operation (shown as "exchange" in the execution plan)
 
-Let me show you a complete example. Here is the code. I created an accumulator using the spark context with an initial value of zero. So the bad_rec is an accumulator variable. Then I use this accumulator variable in my UDF.
+This shuffle operation negatively impacts performance.
 
-# complete code
-'''python
+### The Question
+
+Can we count bad records without introducing a shuffle? **Yes, using Spark Accumulators!**
+
+## Solution: Spark Accumulators
+
+**Spark Accumulator**: A global mutable variable that a Spark cluster can safely update on a per-row basis. Use cases include implementing counters or sums.
+
+### Complete Example
+
+```python
 def handle_bad_rec(shipments: str) -> int:
+    s = None
+    try:
+        s = int(shipments)
+    except ValueError:
+        bad_rec.add(1)
+    return s
 
 if __name__ == "__main__":
     spark = SparkSession \
@@ -71,22 +104,62 @@ if __name__ == "__main__":
     df = spark.createDataFrame(data_list) \
         .toDF("source", "destination", "shipments")
 
+    # Create accumulator with initial value of 0
     bad_rec = spark.sparkContext.accumulator(0)
+    
+    # Register and use the UDF
     spark.udf.register("udf_handle_bad_rec", handle_bad_rec, IntegerType())
     df.withColumn("shipments_int", expr("udf_handle_bad_rec(shipments)")) \
         .show()
 
+    # Access the accumulator value at the driver
     print("Bad Record Count:" + str(bad_rec.value))
-'''
+```
 
-So whenever I see a bad record, I will increment the accumulator by one. Now come back to the end of the program. This accumulator variable is maintained at the driver. So I can simply print the final value. I do not have to collect it from anywhere. Because the accumulators always live at the driver. All the tasks will increment the value of this accumulator using internal communication with the driver.
+### How It Works
 
-So I do not have to include an extra stage and a shuffle for calculating the count of bad records. I am always incrementing it as I discover a bad record. So that's one potential use of an accumulator. You can use accumulators for counting whatever you want to count while processing your data. They are similar to global counter variables in spark. But remember a few essential things. I used the Spark accumulator from inside a withColumn() transformation. I mean, I used it from inside the UDF, but I am calling the UDF inside the withColumn() transformation. So effectively, the accumulator is used inside the withColumn() transformation.
+1. **Accumulator Creation**: `bad_rec = spark.sparkContext.accumulator(0)` creates a global counter initialized to 0
+2. **Increment in UDF**: When a bad record is encountered, the accumulator increments by 1
+3. **Access at Driver**: The accumulator lives at the driver, so you can directly print its value
+4. **Internal Communication**: All tasks increment the accumulator through internal communication with the driver
+5. **No Shuffle**: No extra stage or shuffle operation is needed to get the count
 
-You can increment your accumulators from inside a transformation method or from inside an action method. But it is always recommended to use an accumulator from inside action and avoid using it from inside a transformation.
+## Best Practices and Important Considerations
 
-Why? Because Spark gives you a guarantee of accurate results when the accumulator is incremented from inside an action. We already know, some spark tasks can fail for a variety of reasons. But the driver will retry those tasks on a different worker assuming success in the retry. Spark may also trigger a duplicate task if a task is running very slow. Right? The point is straight.
+### Using Accumulators in Transformations vs Actions
 
-Spark runs duplicate tasks in many situations. So if a task is running 2-3 times on the same data, it will increment your accumulator multiple times, distorting your counter. Right? But if you are incrementing your accumulator from inside an action, Spark guarantees accurate results. So Spark guarantees that each task's update to the accumulator will be applied only once, even if the task is restarted. But if you are incrementing your accumulator from inside a transformation, Spark doesn't give this guarantee.
+You can increment accumulators from:
+- Inside a **transformation** method (e.g., `withColumn()`)
+- Inside an **action** method (e.g., `foreach()`)
 
-Spark in Scala also allows you to give your accumulator a name and show them in the Spark UI. However, PySpark accumulators are always unnamed, and they do not show up in the Spark UI. Spark allows you to create Long and Float accumulators. However, you can also create some custom accumulators.
+**Recommendation**: Always use accumulators inside **actions**, not transformations.
+
+### Why Use Accumulators in Actions?
+
+**Guarantee of Accuracy**: Spark guarantees accurate results when accumulators are incremented inside actions.
+
+**The Problem with Transformations**:
+- Spark tasks can fail for various reasons, and the driver retries them on different workers
+- Spark may trigger duplicate tasks if a task runs slowly
+- If a task runs 2-3 times on the same data, it increments the accumulator multiple times, distorting the counter
+
+**Spark's Guarantee for Actions**:
+- Each task's update to the accumulator is applied only once
+- This guarantee holds even if the task is restarted
+
+**No Guarantee for Transformations**:
+- Spark doesn't provide this guarantee when incrementing inside transformations
+
+### Additional Features
+
+**Named Accumulators (Scala only)**:
+- In Scala, you can name accumulators and view them in the Spark UI
+- PySpark accumulators are always unnamed and don't appear in the Spark UI
+
+**Accumulator Types**:
+- Built-in: Long and Float accumulators
+- Custom: You can create custom accumulators for specific needs
+
+## Summary
+
+Accumulators provide a lightweight, efficient way to implement global counters in Spark without the overhead of shuffle operations. While they're most commonly used with RDD APIs, understanding their behavior is valuable for optimizing DataFrame operations when you need to track metrics during data processing.
