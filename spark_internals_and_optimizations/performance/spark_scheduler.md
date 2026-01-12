@@ -2,25 +2,30 @@ We already know that the Spark application runs multiple jobs. Within a single S
 
 However, you can also trigger them to run parallelly.
 
-## Workflow Structure
+# Spark Job Execution Architecture
 
-Application
-    ↓ (Sequential)
-    ├── Job 1
-    │   ├── Stage 1 → Parallel Tasks
-    │   └── Stage 2 → Parallel Tasks
-    │
-    └── Job 2 (Sequential)
-        ├── Stage 1 → Parallel Tasks
-        ├── Stage 2 → Parallel Tasks
-        └── Stage 3 → Parallel Tasks
+## Workflow Structure
+```
+Application (Sequential)
+│
+├─ Job 1
+│  ├─ Stage 1 → Parallel Tasks
+│  └─ Stage 2 → Parallel Tasks
+│
+└─ Job 2 (Sequential)
+   ├─ Stage 1 → Parallel Tasks
+   ├─ Stage 2 → Parallel Tasks
+   └─ Stage 3 → Parallel Tasks
+```
 
 ## Key Components
 
 - **Application**: The entry point that submits jobs
+
 - **Job 1**: Contains 2 stages
   - Stage 1 → Parallel Tasks
   - Stage 2 → Parallel Tasks
+
 - **Job 2**: Contains 3 stages
   - Stage 1 → Parallel Tasks
   - Stage 2 → Parallel Tasks
