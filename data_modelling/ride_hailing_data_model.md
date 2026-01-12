@@ -776,7 +776,7 @@ CREATE TABLE Fact_Driver_Shifts (
 
 ---
 
-## Challenge Exercise
+## Challenge Exercise 
 
 Now try designing a data model for one of these:
 
