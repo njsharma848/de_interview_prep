@@ -56,16 +56,7 @@ What does **ONE ROW** in your fact table represent?
 
 ## Take a moment to write down your answers before scrolling down!
 
----
----
----
----
----
----
----
----
----
----
+-------------
 
 ## Solution
 
