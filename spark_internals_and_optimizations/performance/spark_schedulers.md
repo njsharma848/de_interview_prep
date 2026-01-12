@@ -151,20 +151,170 @@ if __name__ == "__main__":
 
 ---
 
-## Benefits of Parallel Execution
+## Resource Allocation and Job Scheduling
 
-- **Improved resource utilization**: Multiple jobs can use cluster resources simultaneously
-- **Reduced total execution time**: Independent workflows complete faster
-- **Better throughput**: More work gets done in the same time period
+When running Spark jobs in parallel, **resource management becomes critical**. You need to understand how Spark allocates executor slots to these concurrent jobs.
 
-## When to Use Parallel Execution
+### The Resource Challenge
 
-✅ **Use parallel execution when:**
-- Jobs are completely independent with no data dependencies
-- You have sufficient cluster resources to handle concurrent jobs
-- The overhead of thread management is justified by the workload
+Each Spark job runs as a set of parallel tasks, and each task requires executor resources. When you create a multithreaded Spark application that submits multiple parallel jobs, several challenges emerge:
 
-❌ **Avoid parallel execution when:**
-- Jobs have dependencies on each other
-- Cluster resources are limited (may lead to resource contention)
-- Jobs are small and quick (threading overhead isn't worth it)
+- **Resource competition**: All jobs need resources for their corresponding tasks simultaneously
+- **Task scheduling**: Jobs compete to acquire available executor slots
+- **Performance impact**: Poor scheduling can lead to resource starvation and delays
+
+This is where **scheduling within an application** becomes important.
+
+### When Scheduling Matters
+
+- **Single-threaded applications**: No need to worry about internal scheduling - jobs run sequentially by default
+- **Multithreaded applications**: Job scheduling is critical when submitting jobs from multiple parallel threads
+
+---
+
+## Understanding Spark Schedulers
+
+Spark provides two scheduling modes to handle resource allocation between parallel jobs:
+
+### 1. FIFO Scheduler (Default)
+
+By default, Spark's job scheduler runs jobs in a **First-In-First-Out (FIFO)** fashion.
+
+#### How FIFO Works
+
+```
+Job Queue (FIFO):
+┌─────────┐
+│  Job 1  │ ← Gets priority, consumes all needed resources
+├─────────┤
+│  Job 2  │ ← Waits for Job 1 to release resources
+├─────────┤
+│  Job 3  │ ← Waits for Job 2
+└─────────┘
+```
+
+**Characteristics:**
+- Each job is divided into stages
+- The first job gets priority on **all available resources**
+- Later jobs can only start if earlier jobs don't need all resources
+- Large jobs at the queue head can significantly delay subsequent jobs
+
+**Resource Allocation:**
+- Job 1 consumes as many resources as it needs
+- Job 2 gets priority next, but only after Job 1 releases resources
+- If Job 1 doesn't use all resources, Job 2 can start running
+
+⚠️ **Limitation**: If the jobs at the head of the queue are large, later jobs may experience significant delays.
+
+---
+
+### 2. FAIR Scheduler (Recommended for Parallel Jobs)
+
+The FAIR scheduler distributes resources more equitably among concurrent jobs.
+
+#### How FAIR Scheduling Works
+
+```
+Task Distribution (Round-Robin):
+┌─────────────────────────────────────┐
+│  Slot 1: Job 1 Task                 │
+│  Slot 2: Job 2 Task                 │
+│  Slot 3: Job 1 Task                 │
+│  Slot 4: Job 2 Task                 │
+│  ...                                │
+└─────────────────────────────────────┘
+```
+
+**Characteristics:**
+- Tasks are assigned in a **round-robin fashion**
+- Each job gets a roughly equal share of cluster resources
+- No job waits indefinitely for resources
+- Better support for concurrent workloads
+
+**Task Assignment Pattern:**
+1. Assign one task slot to Job 1
+2. Assign one task slot to Job 2
+3. Assign next task slot to Job 1
+4. Assign next task slot to Job 2
+5. Continue in round-robin fashion
+
+✅ **Benefit**: All parallel jobs make progress simultaneously without resource starvation.
+
+---
+
+## Configuring the FAIR Scheduler
+
+To enable FAIR scheduling, add the configuration when creating your SparkSession:
+
+```python
+spark = SparkSession \
+    .builder \
+    .appName("Demo") \
+    .master("local[3]") \
+    .config("spark.scheduler.mode", "FAIR") \
+    .getOrCreate()
+```
+
+### Monitoring Scheduler Pools in Spark UI
+
+Once you enable the FAIR scheduler, you can monitor it through the Spark UI:
+
+1. Navigate to your Spark application UI
+2. Look for the **Fair Scheduler Pools** section
+3. You'll see the default pool configuration
+
+**Example view:**
+```
+Fair Scheduler Pools:
+├─ default (FAIR)
+   └─ Within pool: FIFO scheduling
+```
+
+### Advanced Configuration: Multiple Pools
+
+While possible, creating multiple pools within the FAIR scheduler is typically unnecessary for most use cases. The **FAIR scheduler with the default pool** works well enough for most parallel job scenarios.
+
+You can configure multiple pools if you need more granular control:
+- Different pools for different priority levels
+- Separate pools for different job types
+- Custom resource allocation per pool
+
+However, for most applications, the single default pool with FAIR scheduling provides sufficient resource management.
+
+---
+
+## Best Practices for Parallel Job Execution
+
+### ✅ Do's
+
+- **Use FAIR scheduler** for multithreaded applications
+- **Monitor resource usage** via Spark UI
+- **Test with representative workloads** to understand resource requirements
+- **Size your cluster appropriately** for concurrent job loads
+
+### ❌ Don'ts
+
+- **Don't use FIFO** for highly parallel workloads
+- **Don't over-thread** beyond available resources
+- **Don't assume** all jobs will get equal performance
+- **Don't ignore** Spark UI metrics and warnings
+
+---
+
+## Summary
+
+**Job Scheduling in Apache Spark:**
+
+| Aspect | FIFO Scheduler | FAIR Scheduler |
+|--------|---------------|----------------|
+| **Default** | Yes | No (must configure) |
+| **Resource Allocation** | First job gets priority | Round-robin distribution |
+| **Best For** | Sequential jobs | Parallel jobs |
+| **Configuration** | No config needed | `spark.scheduler.mode = "FAIR"` |
+| **Risk** | Job starvation possible | Balanced resource sharing |
+
+**Key Takeaway**: For multithreaded Spark applications with parallel jobs, always use the FAIR scheduler to ensure equitable resource distribution and prevent job starvation.
+
+---
+
+Keep learning and keep growing! 🚀
