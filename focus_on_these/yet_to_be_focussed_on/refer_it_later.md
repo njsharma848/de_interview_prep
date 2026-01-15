@@ -1,4 +1,4 @@
-1. MSCK Repair Table
+1. MSCK Repair Table 
 
    The `MSCK REPAIR TABLE` command is used in Apache Hive to update the metadata of a table to reflect the partitions that exist in the underlying storage. This is particularly useful when new partitions are added directly to the storage (e.g., HDFS) without using Hive commands.
 
