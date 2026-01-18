@@ -3149,11 +3149,7 @@ def interview_answer_checkpoint_recovery():
     return answer
 ```
 
-# Real-Time Data Ingestion - Streaming Architecture (Continued)
-
 ---
-
-## Interview Questions & Answers
 
 ### System Design Questions
 
