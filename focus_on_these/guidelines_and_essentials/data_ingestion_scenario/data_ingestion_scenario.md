@@ -4001,7 +4001,31 @@ class SparkJobOptimization:
         # Use G1GC (better for large heaps)
         config = {
             "spark.executor.extraJavaOptions": "-XX:+UseG1GC -XX:G1HeapRegionSize=16M",
-            "spark.driver---
+            "spark.driver.extraJavaOptions": "-XX:+UseG1GC"
+        }
+        
+        for key, value in config.items():
+            spark.conf.set(key, value)
+
+
+# Complete optimization checklist
+optimization_checklist = """
+✅ 1. File Format: Use Parquet with Snappy compression
+✅ 2. Partitioning: 128MB-1GB per partition, partition by frequently filtered columns
+✅ 3. Caching: Cache only reused DataFrames
+✅ 4. Shuffles: Minimize, tune spark.sql.shuffle.partitions
+✅ 5. Memory: Tune executor/driver memory, memory fractions
+✅ 6. Transformations: Single-pass operations, avoid collect()
+✅ 7. Joins: Use broadcast for small tables, bucket large tables
+✅ 8. AQE: Enable for automatic optimizations
+✅ 9. Serialization: Use Kryo
+✅ 10. GC: Use G1GC for large heaps
+"""
+
+print(optimization_checklist)
+```
+
+---
 
 ## Production Issues & Troubleshooting
 
@@ -4018,6 +4042,7 @@ class SparkJobOptimization:
 7. **Schema Evolution**: Incompatible schema changes breaking jobs
 
 ### Job Not Running for 3 Days - Troubleshooting Steps
+
 ```python
 def troubleshoot_job_not_running():
     """Systematic approach when job hasn't run for 3 days"""
@@ -4120,6 +4145,7 @@ def troubleshoot_job_not_running():
 ```
 
 ### Other Jobs Running But Mine Failed
+
 ```python
 def diagnose_single_job_failure():
     """Why is my job failing when others succeed?"""
@@ -4187,6 +4213,7 @@ def diagnose_single_job_failure():
 ```
 
 ### Starting Point for Debugging Failed Jobs
+
 ```python
 def debug_failed_spark_job(job_run_id):
     """Systematic debugging approach"""
@@ -4303,6 +4330,7 @@ def debug_failed_spark_job(job_run_id):
 ```
 
 ### Job Failed Due to OOM - Solutions
+
 ```python
 def handle_oom_error():
     """Comprehensive OOM troubleshooting and fixes"""
@@ -4451,6 +4479,7 @@ def handle_oom_error():
 ```
 
 ### Map-Side Join vs Salting - When to Use Each
+
 ```python
 def compare_join_strategies():
     """When to use broadcast join vs salting"""
@@ -4548,6 +4577,7 @@ def compare_join_strategies():
 ```
 
 ### Why Use `explode(array(lit))`?
+
 ```python
 def explain_explode_array_lit():
     """Why we use explode(array(lit(...))) in salting"""
@@ -4645,6 +4675,7 @@ def explain_explode_array_lit():
 ```
 
 ### How Salt Values Match Between A and B
+
 ```python
 def explain_salt_matching():
     """How salt ensures correct join results"""
