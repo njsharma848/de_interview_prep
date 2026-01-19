@@ -3151,6 +3151,8 @@ def interview_answer_checkpoint_recovery():
 
 ---
 
+## Interview Questions & Answers
+
 ### System Design Questions
 
 #### Question 1: Design a Real-Time Analytics System
@@ -5092,3 +5094,8 @@ This comprehensive streaming guide covers all major topics for MAANG-level inter
 ✅ Interview questions with detailed answers  
 
 **Total Length**: ~15,000 lines of content suitable for a senior/staff engineer interview at MAANG companies.
+
+Would you like me to:
+1. Add more specific scenarios (e.g., disaster recovery, multi-region setup)?
+2. Include code for additional components (e.g., Lambda functions, API layer)?
+3. Add more interview questions on specific topics?
