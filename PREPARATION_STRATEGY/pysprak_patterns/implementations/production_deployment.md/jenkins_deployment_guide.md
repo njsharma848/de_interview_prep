@@ -241,15 +241,17 @@ Runtime Parameters (passed at job execution)
 ### Test Pyramid
 
 ```
-        /\
-       /E2E\         ← 5% (few, slow, expensive)
-      /------\
-     /        \
-    /Integration\   ← 15% (some, moderate)
-   /------------\
-  /              \
- /  Unit Tests   \  ← 80% (many, fast, cheap)
-/------------------\
+          / \
+         /   \
+        /     \
+       /  E2E  \         ← 5% (few, slow, expensive)
+      /-------- \
+     /           \
+    / Integration \      ← 15% (some, moderate)
+   /-------------- \
+  /                 \
+ /    Unit Tests     \   ← 80% (many, fast, cheap)
+/---------------------\
 ```
 
 ### Unit Test Example (Glue)
