@@ -1,7 +1,3 @@
-Based on your resume, here's an updated professional interview introduction with DynamoDB included:
-
----
-
 **Interview Introduction**
 
 "Hi, I'm Sai Sanath Erram, a Data Engineer with over 5 years of experience building scalable data pipelines and real-time processing systems across gaming, financial services, and telecommunications industries.
@@ -16,16 +12,4 @@ Early in my career at Quanted Technologies, I gained solid experience with Dynam
 
 My core technical expertise includes Python, PySpark, Apache Spark, and the AWS data engineering stack—particularly Glue, Lambda, Step Functions, Redshift, Kinesis, and DynamoDB. I'm comfortable with both batch and streaming architectures, and I focus on building production-grade systems with proper monitoring, error handling, and data quality controls.
 
-I hold an MTech in Computer Science from Amrita Vishwa Vidyapeetham and I'm AWS Certified as a Data Engineer Associate. I'm excited about this opportunity because [tailor this to the specific company/role]."
-
----
-
-**Key talking points to emphasize:**
-- Cross-industry experience (gaming, finance, telecom)
-- End-to-end pipeline ownership (design, development, optimization)
-- Production systems focus (monitoring, error handling, reliability)
-- Both batch and streaming expertise
-- AWS-native architecture experience (including NoSQL with DynamoDB)
-- Performance optimization track record across different data stores
-
-This version is still around 90-100 seconds and naturally weaves in your DynamoDB expertise. Would you like me to adjust anything else?
+I hold an MTech in Computer Science from Amrita Vishwa Vidyapeetham and I'm AWS Certified as a Data Engineer Associate.
