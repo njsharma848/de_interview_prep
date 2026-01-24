@@ -78,38 +78,38 @@ production_metrics = {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         DATA SOURCES                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
-│  │ Web Apps │  │Mobile App│  │ IoT      │  │  APIs    │               │
-│  └─────┬────┘  └─────┬────┘  └─────┬────┘  └─────┬────┘               │
-└────────┼─────────────┼─────────────┼─────────────┼────────────────────┘
+│                         DATA SOURCES                                    │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐                 │
+│  │ Web Apps │  │Mobile App│  │ IoT      │  │  APIs    │                 │
+│  └─────┬────┘  └─────┬────┘  └─────┬────┘  └─────┬────┘                 │
+└────────┼─────────────┼─────────────┼─────────────┼──────────────────────┘
          │             │             │             │
          └─────────────┴─────────────┴─────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    INGESTION LAYER (Kafka)                              │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Amazon MSK (Managed Kafka)                                     │    │
-│  │  - Topic: transactions-raw                                      │    │
-│  │  - Partitions: 100 (by customer_id hash)                       │    │
-│  │  - Replication Factor: 3                                        │    │
-│  │  - Retention: 7 days                                            │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  Amazon MSK (Managed Kafka)                                    │     │
+│  │  - Topic: transactions-raw                                     │     │
+│  │  - Partitions: 100 (by customer_id hash)                       │     │
+│  │  - Replication Factor: 3                                       │     │
+│  │  - Retention: 7 days                                           │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │              PROCESSING LAYER (Spark Structured Streaming)              │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  1. Read from Kafka                                             │    │
-│  │  2. Schema validation & data quality checks                     │    │
-│  │  3. Deduplication (based on transaction_id)                     │    │
-│  │  4. Enrichment (join with reference data)                       │    │
-│  │  5. Aggregations (windowed, stateful)                           │    │
-│  │  6. Write to S3 (micro-batches)                                 │    │
-│  └────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  1. Read from Kafka                                            │     │
+│  │  2. Schema validation & data quality checks                    │     │
+│  │  3. Deduplication (based on transaction_id)                    │     │
+│  │  4. Enrichment (join with reference data)                      │     │
+│  │  5. Aggregations (windowed, stateful)                          │     │
+│  │  6. Write to S3 (micro-batches)                                │     │
+│  └────────────────────────────────────────────────────────────────┘     │
+│                                                                         │
 │  Checkpointing: S3 (fault tolerance)                                    │
 │  State Store: HDFS-compatible storage                                   │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -117,32 +117,32 @@ production_metrics = {
                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     STAGING LAYER (S3)                                  │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  s3://bucket/streaming/                                         │    │
-│  │  ├── staging/{year}/{month}/{day}/{hour}/                       │    │
-│  │  ├── checkpoints/                                               │    │
-│  │  └── state-store/                                               │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  s3://bucket/streaming/                                        │     │
+│  │  ├── staging/{year}/{month}/{day}/{hour}/                      │     │
+│  │  ├── checkpoints/                                              │     │
+│  │  └── state-store/                                              │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                   LOADING LAYER (Redshift)                              │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Redshift COPY (every 2 minutes)                                │    │
-│  │  - Micro-batch COPY from S3                                     │    │
-│  │  - UPSERT via staging table                                     │    │
-│  │  - Vacuum & Analyze after load                                  │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  Redshift COPY (every 2 minutes)                               │     │
+│  │  - Micro-batch COPY from S3                                    │     │
+│  │  - UPSERT via staging table                                    │     │
+│  │  - Vacuum & Analyze after load                                 │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    CONSUMPTION LAYER                                    │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│  │ QuickSight│  │ Tableau  │  │ Custom   │  │  APIs    │              │
-│  │ Dashboard│  │          │  │ Apps     │  │          │              │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘              │
+│  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐                │
+│  │ QuickSight│  │ Tableau  │  │ Custom   │  │  APIs    │                │
+│  │ Dashboard │  │          │  │ Apps     │  │          │                │
+│  └───────────┘  └──────────┘  └──────────┘  └──────────┘                │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -3206,25 +3206,25 @@ class RealTimeAnalyticsSystemDesign:
         ┌─────────────────────────────────────────────────────────┐
         │  LAYER 1: INGESTION                                     │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  Amazon MSK (Kafka)                                 │ │
+        │  │  Amazon MSK (Kafka)                                │ │
         │  │  - Partitions: 300 (for parallelism)               │ │
         │  │  - Replication: 3 (for HA)                         │ │
-        │  │  - Retention: 7 days                                │ │
+        │  │  - Retention: 7 days                               │ │
         │  │  - Throughput: 300 MB/sec (headroom)               │ │
         │  └────────────────────────────────────────────────────┘ │
         └─────────────────────────────────────────────────────────┘
                                 ↓
         ┌─────────────────────────────────────────────────────────┐
-        │  LAYER 2: PROCESSING (HOT PATH - Real-time)            │
+        │  LAYER 2: PROCESSING (HOT PATH - Real-time)             │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  Spark Structured Streaming on EMR                  │ │
+        │  │  Spark Structured Streaming on EMR                 │ │
         │  │  - Executors: 100 (4 cores each = 400 cores)       │ │
-        │  │  - Memory: 16GB per executor                        │ │
-        │  │  - Micro-batch: 10 seconds                          │ │
-        │  │  - Checkpointing: Every batch                       │ │
+        │  │  - Memory: 16GB per executor                       │ │
+        │  │  - Micro-batch: 10 seconds                         │ │
+        │  │  - Checkpointing: Every batch                      │ │
         │  └────────────────────────────────────────────────────┘ │
-        │                                                          │
-        │  Processing Steps:                                       │
+        │                                                         │
+        │  Processing Steps:                                      │
         │  1. Deduplication (10-min watermark)                    │
         │  2. Validation & Enrichment                             │
         │  3. Windowed Aggregations (1-min windows)               │
@@ -3233,46 +3233,46 @@ class RealTimeAnalyticsSystemDesign:
                                 ↓
         ┌─────────────────────────────────────────────────────────┐
         │  LAYER 3: STORAGE                                       │
-        │                                                          │
+        │                                                         │
         │  Hot Path (Real-time queries):                          │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  ElastiCache (Redis)                                │ │
-        │  │  - Aggregations: Last 1 hour                        │ │
-        │  │  - TTL: 2 hours                                     │ │
-        │  │  - Read latency: <1ms                               │ │
+        │  │  ElastiCache (Redis)                               │ │
+        │  │  - Aggregations: Last 1 hour                       │ │
+        │  │  - TTL: 2 hours                                    │ │
+        │  │  - Read latency: <1ms                              │ │
         │  └────────────────────────────────────────────────────┘ │
-        │                                                          │
+        │                                                         │
         │  Warm Path (Recent analytics):                          │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  Amazon Redshift                                    │ │
-        │  │  - Recent data: Last 90 days                        │ │
-        │  │  - Query latency: <5 seconds                        │ │
-        │  │  - Auto-scaling enabled                             │ │
+        │  │  Amazon Redshift                                   │ │
+        │  │  - Recent data: Last 90 days                       │ │
+        │  │  - Query latency: <5 seconds                       │ │
+        │  │  - Auto-scaling enabled                            │ │
         │  └────────────────────────────────────────────────────┘ │
-        │                                                          │
+        │                                                         │
         │  Cold Path (Historical):                                │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  S3 + Athena                                        │ │
-        │  │  - All historical data                              │ │
-        │  │  - Partitioned by date                              │ │
-        │  │  - Query latency: <30 seconds                       │ │
+        │  │  S3 + Athena                                       │ │
+        │  │  - All historical data                             │ │
+        │  │  - Partitioned by date                             │ │
+        │  │  - Query latency: <30 seconds                      │ │
         │  └────────────────────────────────────────────────────┘ │
         └─────────────────────────────────────────────────────────┘
                                 ↓
         ┌─────────────────────────────────────────────────────────┐
         │  LAYER 4: SERVING                                       │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  API Gateway + Lambda                               │ │
-        │  │  - Route to appropriate storage tier                │ │
-        │  │  - Real-time: Query Redis                           │ │
-        │  │  - Recent: Query Redshift                           │ │
-        │  │  - Historical: Query Athena                         │ │
+        │  │  API Gateway + Lambda                              │ │
+        │  │  - Route to appropriate storage tier               │ │
+        │  │  - Real-time: Query Redis                          │ │
+        │  │  - Recent: Query Redshift                          │ │
+        │  │  - Historical: Query Athena                        │ │
         │  └────────────────────────────────────────────────────┘ │
-        │                                                          │
+        │                                                         │
         │  ┌────────────────────────────────────────────────────┐ │
-        │  │  Dashboard (QuickSight / Custom React)              │ │
-        │  │  - WebSocket for real-time updates                  │ │
-        │  │  - Refresh: Every 10 seconds                        │ │
+        │  │  Dashboard (QuickSight / Custom React)             │ │
+        │  │  - WebSocket for real-time updates                 │ │
+        │  │  - Refresh: Every 10 seconds                       │ │
         │  └────────────────────────────────────────────────────┘ │
         └─────────────────────────────────────────────────────────┘
         
