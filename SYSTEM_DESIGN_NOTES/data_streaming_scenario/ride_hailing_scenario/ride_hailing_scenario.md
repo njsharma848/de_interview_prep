@@ -1480,129 +1480,132 @@ reconciling them into a consistent final view.
 ```
 Critical scenario! Trust is paramount. My multi-layered debugging approach:
 
-┌─────────────────────────────────────────────────────────────────┐
-│ DEBUGGING FRAMEWORK: Driver Utilization Drop                   │
-│                                                                 │
-│ 1. PROACTIVE PREVENTION (Before Issues Occur):                 │
-│                                                                 │
-│    a) Schema Contracts (Confluent Schema Registry):            │
-│       - App teams register schemas with Avro/Protobuf          │
-│       - Schema evolution checked at ingestion                  │
-│       - Prevents: New app version breaking schema              │
-│                                                                 │
-│       ```python                                                 │
-│       # AWS Glue Schema Registry                               │
-│       schema_registry = SchemaRegistryClient()                 │
-│       schema_registry.validate(event, "trip_started_v2.1")     │
-│       # Rejects malformed data before it enters pipeline       │
-│       ```                                                       │
-│                                                                 │
-│    b) Data Quality Tests (Great Expectations / dbt):           │
-│       Run after Silver layer creation:                         │
-│                                                                 │
-│       ```python                                                 │
-│       # Automated checks                                        │
-│       expect_column_values_to_not_be_null("driver_id")         │
-│       expect_column_values_to_be_between(                      │
-│           "fare_amount", min=0, max=10000                      │
-│       )                                                         │
-│       # Freshness check                                         │
-│       expect_table_row_count_to_be_between(                    │
-│           min_value=yesterday_count * 0.9,                      │
-│           max_value=yesterday_count * 1.1                       │
-│       )                                                         │
-│       ```                                                       │
-│                                                                 │
-│       If checks fail → Halt pipeline, alert on-call engineer   │
-│                                                                 │
-│    c) Monitoring Dashboards (Airflow/CloudWatch):              │
-│       - Kinesis IncomingBytes (dropped?)                       │
-│       - Glue job failures                                      │
-│       - Row count trends (anomaly detection)                   │
-│                                                                 │
-│ 2. REACTIVE DEBUGGING (When Issue Reported):                   │
-│                                                                 │
-│    a) Data Lineage (Immediate triage):                         │
-│       Use AWS Glue Data Catalog or tool to trace:              │
-│                                                                 │
-│       driver_utilization (Gold) ← silver.trips ← bronze.events │
-│                                                                 │
-│       Question: Which layer is wrong?                           │
-│                                                                 │
-│    b) Query Bronze Layer (Raw Truth):                          │
-│       ```sql                                                    │
-│       -- Check raw event volume for SF                          │
-│       SELECT event_date, event_name, COUNT(*)                   │
-│       FROM bronze.events                                         │
-│       WHERE JSON_VALUE(payload, '$.city') = 'San Francisco'     │
-│         AND event_date BETWEEN '2025-01-17' AND '2025-01-18'    │
-│       GROUP BY event_date, event_name;                          │
-│                                                                 │
-│       -- Look for anomaly                                       │
-│       -- Expected: ~1M events/day                               │
-│       -- Actual: 500K? → Data source issue                      │
-│       --         1M? → Logic issue                              │
-│       ```                                                       │
-│                                                                 │
-│    c) Check Silver Layer (Business Logic):                     │
-│       ```sql                                                    │
-│       -- Validate sessionization                                │
-│       SELECT trip_date, trip_status, COUNT(*)                   │
-│       FROM silver.trips                                          │
-│       WHERE trip_date IN ('2025-01-17', '2025-01-18')           │
-│         AND JSON_VALUE(metadata, '$.city') = 'San Francisco'    │
-│       GROUP BY trip_date, trip_status;                          │
-│                                                                 │
-│       -- Are trips being marked IN_PROGRESS instead of          │
-│       -- COMPLETED? (missing trip_completed events)             │
-│       ```                                                       │
-│                                                                 │
-│    d) Dashboarding & Monitoring:                               │
-│       Pipeline health dashboard showing:                        │
-│       - Input volume by city (detect if SF specifically low)    │
-│       - Event type distribution (missing trip_completed?)       │
-│       - Processing lag (data stuck?)                            │
-│                                                                 │
-│    e) Time-Travel (Delta Lake):                                │
-│       ```python                                                 │
-│       # Compare yesterday vs today                              │
-│       yesterday = spark.read \\                                 │
-│           .format("delta") \\                                   │
-│           .option("versionAsOf", 245) \\  # Previous version    │
-│           .load("silver/trips")                                 │
-│                                                                 │
-│       today = spark.read.format("delta").load("silver/trips")  │
-│                                                                 │
-│       # Schema changed? New filter added?                       │
-│       yesterday.schema == today.schema                          │
-│       ```                                                       │
-│                                                                 │
-│ 3. ROOT CAUSE SCENARIOS & FIXES:                                │
-│                                                                 │
-│    Scenario A: New App Version Sends Null driver_ids           │
-│    Detection: Bronze shows 50% null driver_id for SF           │
-│    Fix: Alert app team, rollback app, filter nulls temporarily │
-│                                                                 │
-│    Scenario B: Code Change in Silver Layer                     │
-│    Detection: Bronze OK, Silver wrong                           │
-│    Fix: Rollback Silver job, backfill affected dates           │
-│                                                                 │
-│    Scenario C: Upstream Kinesis Issue                          │
-│    Detection: CloudWatch shows 50% drop in IncomingBytes       │
-│    Fix: AWS Support ticket, backfill from app logs if available│
-│                                                                 │
-│ 4. COMMUNICATION:                                               │
-│                                                                 │
-│    Immediate Response (within 30 min):                          │
-│    "Investigating. Checking data lineage..."                    │
-│                                                                 │
-│    Update (within 2 hours):                                     │
-│    "Root cause identified: [X]. Fix in progress.                │
-│     Expected resolution: [Y hours]."                            │
-│                                                                 │
-│    Resolution (within 24 hours):                                │
-│    "Issue fixed. Data backfilled. Preventive measures: [Z]."    │
-└─────────────────────────────────────────────────────────────────┘
+# DEBUGGING FRAMEWORK: Driver Utilization Drop
+
+## 1. PROACTIVE PREVENTION (Before Issues Occur)
+
+### a) Schema Contracts (Confluent Schema Registry)
+
+- App teams register schemas with Avro/Protobuf
+- Schema evolution checked at ingestion
+- Prevents: New app version breaking schema
+```python
+# AWS Glue Schema Registry
+schema_registry = SchemaRegistryClient()
+schema_registry.validate(event, "trip_started_v2.1")
+# Rejects malformed data before it enters pipeline
+```
+
+### b) Data Quality Tests (Great Expectations / dbt)
+
+Run after Silver layer creation:
+```python
+# Automated checks
+expect_column_values_to_not_be_null("driver_id")
+expect_column_values_to_be_between(
+    "fare_amount", min=0, max=10000
+)
+# Freshness check
+expect_table_row_count_to_be_between(
+    min_value=yesterday_count * 0.9,
+    max_value=yesterday_count * 1.1
+)
+```
+
+If checks fail → Halt pipeline, alert on-call engineer
+
+### c) Monitoring Dashboards (Airflow/CloudWatch)
+
+- Kinesis IncomingBytes (dropped?)
+- Glue job failures
+- Row count trends (anomaly detection)
+
+## 2. REACTIVE DEBUGGING (When Issue Reported)
+
+### a) Data Lineage (Immediate triage)
+
+Use AWS Glue Data Catalog or tool to trace:
+```
+driver_utilization (Gold) ← silver.trips ← bronze.events
+```
+
+Question: Which layer is wrong?
+
+### b) Query Bronze Layer (Raw Truth)
+```sql
+-- Check raw event volume for SF
+SELECT event_date, event_name, COUNT(*)
+FROM bronze.events
+WHERE JSON_VALUE(payload, '$.city') = 'San Francisco'
+  AND event_date BETWEEN '2025-01-17' AND '2025-01-18'
+GROUP BY event_date, event_name;
+
+-- Look for anomaly
+-- Expected: ~1M events/day
+-- Actual: 500K? → Data source issue
+--         1M? → Logic issue
+```
+
+### c) Check Silver Layer (Business Logic)
+```sql
+-- Validate sessionization
+SELECT trip_date, trip_status, COUNT(*)
+FROM silver.trips
+WHERE trip_date IN ('2025-01-17', '2025-01-18')
+  AND JSON_VALUE(metadata, '$.city') = 'San Francisco'
+GROUP BY trip_date, trip_status;
+
+-- Are trips being marked IN_PROGRESS instead of
+-- COMPLETED? (missing trip_completed events)
+```
+
+### d) Dashboarding & Monitoring
+
+Pipeline health dashboard showing:
+- Input volume by city (detect if SF specifically low)
+- Event type distribution (missing trip_completed?)
+- Processing lag (data stuck?)
+
+### e) Time-Travel (Delta Lake)
+```python
+# Compare yesterday vs today
+yesterday = spark.read \
+    .format("delta") \
+    .option("versionAsOf", 245) \  # Previous version
+    .load("silver/trips")
+
+today = spark.read.format("delta").load("silver/trips")
+
+# Schema changed? New filter added?
+yesterday.schema == today.schema
+```
+
+## 3. ROOT CAUSE SCENARIOS & FIXES
+
+**Scenario A: New App Version Sends Null driver_ids**
+Detection: Bronze shows 50% null driver_id for SF
+Fix: Alert app team, rollback app, filter nulls temporarily
+
+**Scenario B: Code Change in Silver Layer**
+Detection: Bronze OK, Silver wrong
+Fix: Rollback Silver job, backfill affected dates
+
+**Scenario C: Upstream Kinesis Issue**
+Detection: CloudWatch shows 50% drop in IncomingBytes
+Fix: AWS Support ticket, backfill from app logs if available
+
+## 4. COMMUNICATION
+
+**Immediate Response (within 30 min):**
+"Investigating. Checking data lineage..."
+
+**Update (within 2 hours):**
+"Root cause identified: [X]. Fix in progress. Expected resolution: [Y hours]."
+
+**Resolution (within 24 hours):**
+"Issue fixed. Data backfilled. Preventive measures: [Z]."
+
+---
 
 **Tools in the Stack:**
 
