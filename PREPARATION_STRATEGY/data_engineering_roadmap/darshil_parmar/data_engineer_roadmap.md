@@ -170,4 +170,4 @@ AI is not replacing data engineers. **It is replacing slow engineers.**
 
 ---
 
-![Data Platform Architecture](../images/darshil_parmar.png)
+![Data Platform Architecture](../image_references/darshil_parmar.png)
