@@ -97,38 +97,38 @@ Cost:
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                         DATA SOURCES                                     │
-│  ┌──────────────────┐              ┌──────────────────┐                │
-│  │   Driver App     │              │    Rider App     │                │
-│  │  - iOS/Android   │              │  - iOS/Android   │                │
-│  │  - Location (5s) │              │  - Trip events   │                │
-│  └────────┬─────────┘              └────────┬─────────┘                │
-└───────────┼──────────────────────────────────┼──────────────────────────┘
-            │                                  │
-            │  500M events/day (5,787 avg TPS, 20K peak TPS)
-            │  Events: trip_requested, driver_assigned, driver_arrived,
-            │          trip_started, trip_completed, payment_processed
-            │                                  │
-            └──────────────────┬───────────────┘
+│  ┌──────────────────┐                           ┌────────────────────┐   │
+│  │   Driver App     │                           │  Rider App         │   │
+│  │  - iOS/Android   │                           │  - iOS/Android     │   │
+│  │  - Location (5s) │                           │  - Trip events     │   │
+│  └────┬─────────────┘                           └─────────────────┬──┘   │
+└───────│───────────────────────────────────────────────────────────│──────┘
+        │                                                           │
+        │  500M events/day (5,787 avg TPS, 20K peak TPS)            │
+        │  Events: trip_requested, driver_assigned, driver_arrived, │
+        │          trip_started, trip_completed, payment_processed  │
+        │                                                           │
+        └──────────────────┬────────────────────────────────────────┘
                                │
                                ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                    INGESTION LAYER                                       │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Amazon Kinesis Data Streams                                   │    │
-│  │  - Shards: 50 (auto-scaling enabled)                           │    │
-│  │  - Partition key: trip_id (maintains event order per trip)     │    │
-│  │  - Retention: 24 hours                                          │    │
-│  │  - Enhanced fan-out: Multiple consumers                        │    │
-│  │  - Cost: ~$550/month                                            │    │
-│  │                                                                 │    │
-│  │  Event Envelope (schema evolution):                            │    │
-│  │  {                                                              │    │
-│  │    "event_name": "trip_started",                               │    │
-│  │    "event_timestamp": "2025-01-18T10:30:00Z",                  │    │
-│  │    "schema_version": "v2.1",                                   │    │
-│  │    "payload": { ... actual event data ... }                    │    │
-│  │  }                                                              │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  Amazon Kinesis Data Streams                                   │      │
+│  │  - Shards: 50 (auto-scaling enabled)                           │      │
+│  │  - Partition key: trip_id (maintains event order per trip)     │      │
+│  │  - Retention: 24 hours                                         │      │
+│  │  - Enhanced fan-out: Multiple consumers                        │      │
+│  │  - Cost: ~$550/month                                           │      │
+│  │                                                                │      │
+│  │  Event Envelope (schema evolution):                            │      │
+│  │  {                                                             │      │
+│  │    "event_name": "trip_started",                               │      │
+│  │    "event_timestamp": "2025-01-18T10:30:00Z",                  │      │
+│  │    "schema_version": "v2.1",                                   │      │
+│  │    "payload": { ... actual event data ... }                    │      │
+│  │  }                                                             │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 └──────────────────────────────────────────────────────────────────────────┘
                                │
                                │
@@ -148,86 +148,86 @@ Cost:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  BATCH PATH: 24-Hour Latency, 100% Accurate                             │
+│  BATCH PATH: 24-Hour Latency, 100% Accurate                              │
 │                                                                          │
 │  Kinesis Data Streams                                                    │
 │         │                                                                │
 │         ▼                                                                │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Kinesis Data Firehose                                         │    │
-│  │  - Batch interval: 15 minutes                                  │    │
-│  │  - Compression: gzip                                            │    │
-│  │  - Format: JSON (raw fidelity)                                 │    │
-│  │  - Destination: S3 Landing Zone                                │    │
-│  │  - Cost: ~$100/month                                            │    │
-│  └─────────────────────────┬──────────────────────────────────────┘    │
-│                            │                                            │
-│                            ▼                                            │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  S3 Landing Zone (Raw Layer)                                   │    │
-│  │  Path: s3://ride-hailing-datalake/raw/events/                 │    │
-│  │        year=YYYY/month=MM/day=DD/hour=HH/                      │    │
-│  │  Format: gzipped JSON                                           │    │
-│  │  Lifecycle:                                                     │    │
-│  │  - Keep in S3 Standard: 7 days                                 │    │
-│  │  - Move to S3 IA: 30 days                                      │    │
-│  │  - Move to Glacier: 90 days                                    │    │
-│  │  - Keep forever (compliance)                                   │    │
-│  │  Cost: ~$450/month (Standard) + $200/month (IA/Glacier)       │    │
-│  └─────────────────────────┬──────────────────────────────────────┘    │
-│                            │                                            │
-│                            │ Hourly Spark Job (AWS Glue or EMR)        │
-│                            ▼                                            │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  BRONZE LAYER (Validated, Deduplicated)                        │    │
-│  │  Path: s3://ride-hailing-datalake/bronze/events/               │    │
-│  │        event_date=YYYY-MM-DD/                                  │    │
-│  │  Format: Parquet (columnar, compressed)                        │    │
-│  │  Schema: Same as source (no transformations)                   │    │
-│  │  Operations:                                                    │    │
-│  │  - JSON → Parquet conversion                                   │    │
-│  │  - Schema validation                                            │    │
-│  │  - Deduplication (by event_id)                                 │    │
-│  │  - Add metadata: processing_time, data_quality_flag           │    │
-│  │  Job: Runs hourly, processes last 24-48 hours                 │    │
-│  │  Cost: ~$300/month (Glue DPU hours)                            │    │
-│  └─────────────────────────┬──────────────────────────────────────┘    │
-│                            │                                            │
-│                            │ Daily Spark Job                            │
-│                            ▼                                            │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  SILVER LAYER (Cleaned, Trip-Level)                            │    │
-│  │  Path: s3://ride-hailing-datalake/silver/trips/                │    │
-│  │        event_date=YYYY-MM-DD/                                  │    │
-│  │  Format: Delta Lake (ACID, time travel)                        │    │
-│  │  Schema: trip_id, start_time, end_time, fare, duration...     │    │
-│  │  Operations:                                                    │    │
-│  │  - Sessionization: Group events by trip_id                     │    │
-│  │  - Pivot: trip_started → start_time,                           │    │
-│  │           trip_completed → end_time                             │    │
-│  │  - Enrichment: Calculate derived metrics                       │    │
-│  │  - Business rules: Data cleansing, validation                  │    │
-│  │  - MERGE support: Handle late arrivals (UPSERT)               │    │
-│  │  Job: Runs daily, processes 48-hour window                     │    │
-│  │  Cost: ~$400/month (Glue DPU hours)                            │    │
-│  └─────────────────────────┬──────────────────────────────────────┘    │
-│                            │                                            │
-│                            │ Daily Spark Job                            │
-│                            ▼                                            │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  GOLD LAYER (Business Aggregates)                              │    │
-│  │  Tables:                                                        │    │
-│  │  - trips_per_hour (city, hour → count)                        │    │
-│  │  - driver_utilization (driver_id, date → metrics)             │    │
-│  │  - surge_effectiveness (city, hour → pricing data)            │    │
-│  │  Format: Delta Lake → Loaded to Redshift/Snowflake            │    │
-│  │  Operations:                                                    │    │
-│  │  - Aggregations from Silver                                    │    │
-│  │  - Dimensional modeling (star schema)                          │    │
-│  │  - Pre-computed metrics for dashboards                         │    │
-│  │  Job: Runs daily                                               │    │
-│  │  Cost: ~$200/month (Glue) + $2,000/month (Redshift)           │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  Kinesis Data Firehose                                         │      │
+│  │  - Batch interval: 15 minutes                                  │      │
+│  │  - Compression: gzip                                           │      │
+│  │  - Format: JSON (raw fidelity)                                 │      │
+│  │  - Destination: S3 Landing Zone                                │      │
+│  │  - Cost: ~$100/month                                           │      │
+│  └─────────────────────────┬──────────────────────────────────────┘      │
+│                            │                                             │
+│                            ▼                                             │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  S3 Landing Zone (Raw Layer)                                   │      │
+│  │  Path: s3://ride-hailing-datalake/raw/events/                  │      │
+│  │        year=YYYY/month=MM/day=DD/hour=HH/                      │      │
+│  │  Format: gzipped JSON                                          │      │
+│  │  Lifecycle:                                                    │      │
+│  │  - Keep in S3 Standard: 7 days                                 │      │
+│  │  - Move to S3 IA: 30 days                                      │      │
+│  │  - Move to Glacier: 90 days                                    │      │
+│  │  - Keep forever (compliance)                                   │      │
+│  │  Cost: ~$450/month (Standard) + $200/month (IA/Glacier)        │      │
+│  └─────────────────────────┬──────────────────────────────────────┘      │
+│                            │                                             │
+│                            │ Hourly Spark Job (AWS Glue or EMR)          │
+│                            ▼                                             │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  BRONZE LAYER (Validated, Deduplicated)                        │      │
+│  │  Path: s3://ride-hailing-datalake/bronze/events/               │      │
+│  │        event_date=YYYY-MM-DD/                                  │      │
+│  │  Format: Parquet (columnar, compressed)                        │      │
+│  │  Schema: Same as source (no transformations)                   │      │
+│  │  Operations:                                                   │      │
+│  │  - JSON → Parquet conversion                                   │      │
+│  │  - Schema validation                                           │      │
+│  │  - Deduplication (by event_id)                                 │      │
+│  │  - Add metadata: processing_time, data_quality_flag            │      │
+│  │  Job: Runs hourly, processes last 24-48 hours                  │      │
+│  │  Cost: ~$300/month (Glue DPU hours)                            │      │
+│  └─────────────────────────┬──────────────────────────────────────┘      │
+│                            │                                             │
+│                            │ Daily Spark Job                             │
+│                            ▼                                             │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  SILVER LAYER (Cleaned, Trip-Level)                            │      │
+│  │  Path: s3://ride-hailing-datalake/silver/trips/                │      │
+│  │        event_date=YYYY-MM-DD/                                  │      │
+│  │  Format: Delta Lake (ACID, time travel)                        │      │
+│  │  Schema: trip_id, start_time, end_time, fare, duration...      │      │
+│  │  Operations:                                                   │      │
+│  │  - Sessionization: Group events by trip_id                     │      │
+│  │  - Pivot: trip_started → start_time,                           │      │
+│  │           trip_completed → end_time                            │      │
+│  │  - Enrichment: Calculate derived metrics                       │      │
+│  │  - Business rules: Data cleansing, validation                  │      │
+│  │  - MERGE support: Handle late arrivals (UPSERT)                │      │
+│  │  Job: Runs daily, processes 48-hour window                     │      │
+│  │  Cost: ~$400/month (Glue DPU hours)                            │      │
+│  └─────────────────────────┬──────────────────────────────────────┘      │
+│                            │                                             │
+│                            │ Daily Spark Job                             │
+│                            ▼                                             │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  GOLD LAYER (Business Aggregates)                              │      │
+│  │  Tables:                                                       │      │
+│  │  - trips_per_hour (city, hour → count)                         │      │
+│  │  - driver_utilization (driver_id, date → metrics)              │      │
+│  │  - surge_effectiveness (city, hour → pricing data)             │      │
+│  │  Format: Delta Lake → Loaded to Redshift/Snowflake             │      │
+│  │  Operations:                                                   │      │
+│  │  - Aggregations from Silver                                    │      │
+│  │  - Dimensional modeling (star schema)                          │      │
+│  │  - Pre-computed metrics for dashboards                         │      │
+│  │  Job: Runs daily                                               │      │
+│  │  Cost: ~$200/month (Glue) + $2,000/month (Redshift)            │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -235,41 +235,41 @@ Cost:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  STREAMING PATH: 15-Minute Latency, ~99.9% Accurate                     │
+│  STREAMING PATH: 15-Minute Latency, ~99.9% Accurate                      │
 │                                                                          │
 │  Kinesis Data Streams                                                    │
 │         │                                                                │
 │         ▼                                                                │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Kinesis Data Analytics (Managed Apache Flink)                 │    │
-│  │  Application: trip-aggregator                                  │    │
-│  │  KPUs: 5-15 (auto-scaling)                                     │    │
-│  │  Parallelism: 10                                                │    │
-│  │  Cost: ~$600/month                                              │    │
-│  │                                                                 │    │
-│  │  Processing Logic:                                              │    │
-│  │  1. Stateful Stream: Maintain in-memory state per trip_id     │    │
-│  │  2. Window: 2-hour session window (trip timeout)               │    │
-│  │  3. Aggregation: Combine events into trip record              │    │
-│  │  4. Output: Completed trips to serving layer                   │    │
-│  │                                                                 │    │
-│  │  State Management:                                              │    │
-│  │  - RocksDB state backend                                       │    │
-│  │  - Checkpoint every 60 seconds to S3                           │    │
-│  │  - Exactly-once semantics                                      │    │
-│  └─────────────────────────┬──────────────────────────────────────┘    │
-│                            │                                            │
-│                            ▼                                            │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Serving Layer: Amazon Redshift                                │    │
-│  │  Table: streaming.trips (last 24 hours only)                   │    │
-│  │  Load mechanism: Flink → S3 micro-batch → COPY every 5min     │    │
-│  │  Retention: 24 hours (overwritten by batch daily)             │    │
-│  │  Query latency: <2 seconds                                     │    │
-│  │  Cost: Included in $2,000/month Redshift cluster              │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  Kinesis Data Analytics (Managed Apache Flink)                 │      │
+│  │  Application: trip-aggregator                                  │      │
+│  │  KPUs: 5-15 (auto-scaling)                                     │      │
+│  │  Parallelism: 10                                               │      │
+│  │  Cost: ~$600/month                                             │      │
+│  │                                                                │      │
+│  │  Processing Logic:                                             │      │
+│  │  1. Stateful Stream: Maintain in-memory state per trip_id      │      │
+│  │  2. Window: 2-hour session window (trip timeout)               │      │
+│  │  3. Aggregation: Combine events into trip record               │      │
+│  │  4. Output: Completed trips to serving layer                   │      │
+│  │                                                                │      │
+│  │  State Management:                                             │      │
+│  │  - RocksDB state backend                                       │      │
+│  │  - Checkpoint every 60 seconds to S3                           │      │
+│  │  - Exactly-once semantics                                      │      │
+│  └─────────────────────────┬──────────────────────────────────────┘      │
+│                            │                                             │
+│                            ▼                                             │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  Serving Layer: Amazon Redshift                                │      │
+│  │  Table: streaming.trips (last 24 hours only)                   │      │
+│  │  Load mechanism: Flink → S3 micro-batch → COPY every 5min      │      │
+│  │  Retention: 24 hours (overwritten by batch daily)              │      │
+│  │  Query latency: <2 seconds                                     │      │
+│  │  Cost: Included in $2,000/month Redshift cluster               │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 │                                                                          │
-│  Alternative: Snowflake (micro-partitions, auto-scaling)               │
+│  Alternative: Snowflake (micro-partitions, auto-scaling)                 │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -279,59 +279,59 @@ Cost:
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  LAMBDA ARCHITECTURE: CONSISTENCY STRATEGY                               │
 │                                                                          │
-│  Problem: Two pipelines (Spark batch, Flink streaming) create trips    │
-│           → Potential discrepancies                                     │
+│  Problem: Two pipelines (Spark batch, Flink streaming) create trips      │
+│           → Potential discrepancies                                      │
 │                                                                          │
-│  Solution: "Batch as Source of Truth"                                   │
+│  Solution: "Batch as Source of Truth"                                    │
 │                                                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  1. Streaming Layer (Redshift: streaming.trips)                │    │
-│  │     - Provides fast, provisional results                       │    │
-│  │     - Accuracy: ~99.9% (some late events missed)               │    │
-│  │     - Retention: Last 24 hours only                            │    │
-│  │     - Users: City operations teams (need speed)                │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  1. Streaming Layer (Redshift: streaming.trips)                │      │
+│  │     - Provides fast, provisional results                       │      │
+│  │     - Accuracy: ~99.9% (some late events missed)               │      │
+│  │     - Retention: Last 24 hours only                            │      │
+│  │     - Users: City operations teams (need speed)                │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 │                                                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  2. Batch Layer (Redshift: batch.trips)                        │    │
-│  │     - Processes all data (including late arrivals)             │    │
-│  │     - Accuracy: 100% (source of truth)                         │    │
-│  │     - Retention: 13 months queryable                           │    │
-│  │     - Users: Executives, BI, ML teams                          │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  2. Batch Layer (Redshift: batch.trips)                        │      │
+│  │     - Processes all data (including late arrivals)             │      │
+│  │     - Accuracy: 100% (source of truth)                         │      │
+│  │     - Retention: 13 months queryable                           │      │
+│  │     - Users: Executives, BI, ML teams                          │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 │                                                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  3. Daily Reconciliation (Every 24 hours)                      │    │
-│  │                                                                 │    │
-│  │     Job runs at 2 AM:                                          │    │
-│  │     a) Batch pipeline completes (Silver layer updated)         │    │
-│  │     b) Load batch.trips from Silver Delta Lake                 │    │
-│  │     c) TRUNCATE streaming.trips (discard old provisional data) │    │
-│  │     d) Gold layer built ONLY from batch.trips                  │    │
-│  │                                                                 │    │
-│  │     Result:                                                     │    │
-│  │     - Last 24h: streaming.trips (fast but provisional)         │    │
-│  │     - Older: batch.trips (slow but accurate)                   │    │
-│  │     - Dashboards query both (UNION)                            │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  3. Daily Reconciliation (Every 24 hours)                      │      │ 
+│  │                                                                │      │
+│  │     Job runs at 2 AM:                                          │      │
+│  │     a) Batch pipeline completes (Silver layer updated)         │      │
+│  │     b) Load batch.trips from Silver Delta Lake                 │      │
+│  │     c) TRUNCATE streaming.trips (discard old provisional data) │      │
+│  │     d) Gold layer built ONLY from batch.trips                  │      │
+│  │                                                                │      │
+│  │     Result:                                                    │      │
+│  │     - Last 24h: streaming.trips (fast but provisional)         │      │
+│  │     - Older: batch.trips (slow but accurate)                   │      │
+│  │     - Dashboards query both (UNION)                            │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 │                                                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  4. Query Pattern (BI Tools)                                   │    │
-│  │                                                                 │    │
-│  │     SELECT * FROM (                                            │    │
-│  │       -- Real-time data (last 24 hours)                        │    │
-│  │       SELECT * FROM streaming.trips                            │    │
-│  │       WHERE trip_start_time >= CURRENT_DATE - 1                │    │
-│  │                                                                 │    │
-│  │       UNION ALL                                                │    │
-│  │                                                                 │    │
-│  │       -- Historical data (accurate)                            │    │
-│  │       SELECT * FROM batch.trips                                │    │
-│  │       WHERE trip_start_time < CURRENT_DATE - 1                 │    │
-│  │     )                                                           │    │
-│  │                                                                 │    │
-│  │     View: Create materialized view for convenience            │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐      │
+│  │  4. Query Pattern (BI Tools)                                   │      │
+│  │                                                                │      │
+│  │     SELECT * FROM (                                            │      │
+│  │       -- Real-time data (last 24 hours)                        │      │
+│  │       SELECT * FROM streaming.trips                            │      │
+│  │       WHERE trip_start_time >= CURRENT_DATE - 1                │      │
+│  │                                                                │      │
+│  │       UNION ALL                                                │      │
+│  │                                                                │      │
+│  │       -- Historical data (accurate)                            │      │
+│  │       SELECT * FROM batch.trips                                │      │
+│  │       WHERE trip_start_time < CURRENT_DATE - 1                 │      │
+│  │     )                                                          │      │
+│  │                                                                │      │
+│  │     View: Create materialized view for convenience             │      │
+│  └────────────────────────────────────────────────────────────────┘      │
 └──────────────────────────────────────────────────────────────────────────┘
 
 Key Insight:
