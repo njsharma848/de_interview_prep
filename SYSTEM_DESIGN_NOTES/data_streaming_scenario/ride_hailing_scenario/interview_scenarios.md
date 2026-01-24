@@ -2280,14 +2280,14 @@ RUNBOOKS = {
 
 This system design provides:
 
-✅ **Lambda Architecture** for dual latency requirements (15-min + 24-hour)
-✅ **Medallion Pattern** (Bronze/Silver/Gold) for organized data lake
-✅ **Schema Evolution** handling via envelope pattern
-✅ **Late-Arriving Data** handling with 48-hour watermark
-✅ **Data Quality** framework with Great Expectations
-✅ **Exactly-Once Semantics** via Delta Lake + Kinesis + Flink
-✅ **Batch-Streaming Consistency** via daily reconciliation
-✅ **Production Monitoring** with CloudWatch + alerting
+✅ **Lambda Architecture** for dual latency requirements (15-min + 24-hour) <br>
+✅ **Medallion Pattern** (Bronze/Silver/Gold) for organized data lake <br>
+✅ **Schema Evolution** handling via envelope pattern <br>
+✅ **Late-Arriving Data** handling with 48-hour watermark <br>
+✅ **Data Quality** framework with Great Expectations <br>
+✅ **Exactly-Once Semantics** via Delta Lake + Kinesis + Flink <br>
+✅ **Batch-Streaming Consistency** via daily reconciliation <br>
+✅ **Production Monitoring** with CloudWatch + alerting <br>
 ✅ **Cost-Optimized** architecture at $9,700/month
 
 **Scale Achieved:**
