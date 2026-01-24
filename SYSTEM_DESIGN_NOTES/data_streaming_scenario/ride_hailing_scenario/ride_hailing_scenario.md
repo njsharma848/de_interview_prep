@@ -1364,47 +1364,48 @@ Excellent question. This is the core challenge of Lambda Architecture.
 
 My solution: "Batch as Source of Truth" with daily reconciliation.
 
-┌─────────────────────────────────────────────────────────────────┐
-│ CONSISTENCY STRATEGY                                            │
-│                                                                 │
-│ 1. Streaming Layer (Redshift: streaming.trips)                 │
-│    - Fast, provisional results                                 │
-│    - Lives in separate schema                                  │
-│    - TTL: 24 hours only                                        │
-│    - Users: City ops (need speed > perfect accuracy)           │
-│                                                                 │
-│ 2. Batch Layer (Redshift: batch.trips)                         │
-│    - Complete, accurate results                                │
-│    - Source of truth                                           │
-│    - Retention: 13 months                                      │
-│    - Users: Executives, BI, ML teams                           │
-│                                                                 │
-│ 3. Daily Reconciliation Process (runs at 2 AM):                │
-│                                                                 │
-│    Step A: Batch pipeline completes                            │
-│    ├─ Processes all events (including late arrivals)           │
-│    ├─ Updates Silver Delta Lake                                │
-│    └─ Load to batch.trips table                                │
-│                                                                 │
-│    Step B: Overwrite streaming data                            │
-│    ├─ TRUNCATE streaming.trips                                 │
-│    │  (discard last 24h provisional data)                      │
-│    └─ Backfill from batch.trips for last 24h                   │
-│       (ensures consistency)                                     │
-│                                                                 │
-│    Step C: Gold tables                                         │
-│    └─ Built ONLY from batch.trips                              │
-│       (never from streaming)                                    │
-│                                                                 │
-│ 4. Query Pattern (BI Views):                                   │
-│                                                                 │
-│    CREATE VIEW unified_trips AS                                │
-│    SELECT * FROM streaming.trips                               │
-│      WHERE trip_start >= CURRENT_DATE - 1                      │
-│    UNION ALL                                                   │
-│    SELECT * FROM batch.trips                                    │
-│      WHERE trip_start < CURRENT_DATE - 1;                      │
-└─────────────────────────────────────────────────────────────────┘
+# CONSISTENCY STRATEGY
+
+## 1. Streaming Layer (Redshift: streaming.trips)
+
+- Fast, provisional results
+- Lives in separate schema
+- TTL: 24 hours only
+- Users: City ops (need speed > perfect accuracy)
+
+## 2. Batch Layer (Redshift: batch.trips)
+
+- Complete, accurate results
+- Source of truth
+- Retention: 13 months
+- Users: Executives, BI, ML teams
+
+## 3. Daily Reconciliation Process (runs at 2 AM)
+
+### Step A: Batch pipeline completes
+
+- Processes all events (including late arrivals)
+- Updates Silver Delta Lake
+- Load to batch.trips table
+
+### Step B: Overwrite streaming data
+
+- TRUNCATE streaming.trips (discard last 24h provisional data)
+- Backfill from batch.trips for last 24h (ensures consistency)
+
+### Step C: Gold tables
+
+- Built ONLY from batch.trips (never from streaming)
+
+## 4. Query Pattern (BI Views)
+```sql
+CREATE VIEW unified_trips AS
+SELECT * FROM streaming.trips
+  WHERE trip_start >= CURRENT_DATE - 1
+UNION ALL
+SELECT * FROM batch.trips
+  WHERE trip_start < CURRENT_DATE - 1;
+```
 
 **Why This Works:**
 
