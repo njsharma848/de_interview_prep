@@ -167,3 +167,7 @@ AI is not replacing data engineers. **It is replacing slow engineers.**
 - Generate docs
 
 **If you don't understand systems, AI will just help you make mistakes faster.**
+
+---
+
+![Data Platform Architecture](../images/darshil_parmar.png)
