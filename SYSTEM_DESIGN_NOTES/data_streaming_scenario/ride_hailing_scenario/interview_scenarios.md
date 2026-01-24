@@ -711,19 +711,19 @@ if __name__ == '__main__':
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  CHALLENGE: Two Codebases, Potential Discrepancies              │
+│  CHALLENGE: Two Codebases, Potential Discrepancies               │
 │                                                                  │
-│  Batch Path (Spark):                                            │
-│  ├── Sessionization logic in Spark SQL                          │
-│  ├── Business rules in Python/Scala                             │
-│  └── Result: silver.trips table                                 │
+│  Batch Path (Spark):                                             │
+│  ├── Sessionization logic in Spark SQL                           │
+│  ├── Business rules in Python/Scala                              │
+│  └── Result: silver.trips table                                  │
 │                                                                  │
-│  Streaming Path (Flink):                                        │
-│  ├── Sessionization logic in Flink SQL                          │
-│  ├── Business rules in Python (PyFlink)                         │
-│  └── Result: trips_realtime table                               │
+│  Streaming Path (Flink):                                         │
+│  ├── Sessionization logic in Flink SQL                           │
+│  ├── Business rules in Python (PyFlink)                          │
+│  └── Result: trips_realtime table                                │
 │                                                                  │
-│  Risk: Logic diverges → Different trip metrics in each path    │
+│  Risk: Logic diverges → Different trip metrics in each path      │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -794,17 +794,17 @@ END TRANSACTION;
 │  RECONCILIATION TIMELINE                                       │
 │                                                                │
 │  Day 1:                                                        │
-│  ├── 00:00 - 23:59: Streaming path serves live data          │
-│  └── 02:00 (next day): Batch job completes                    │
+│  ├── 00:00 - 23:59: Streaming path serves live data            │
+│  └── 02:00 (next day): Batch job completes                     │
 │                                                                │
 │  Day 2:                                                        │
-│  ├── 02:00: Reconciliation starts                             │
-│  ├── 02:05: Batch data overwrites Day 1 streaming data        │
-│  └── 02:10: Dashboard now shows 100% accurate Day 1 data      │
+│  ├── 02:00: Reconciliation starts                              │
+│  ├── 02:05: Batch data overwrites Day 1 streaming data         │
+│  └── 02:10: Dashboard now shows 100% accurate Day 1 data       │
 │                                                                │
 │  Result:                                                       │
-│  - Live data: Fast but ~99.5% accurate (streaming)            │
-│  - Historical data: 100% accurate (batch corrected)           │
+│  - Live data: Fast but ~99.5% accurate (streaming)             │
+│  - Historical data: 100% accurate (batch corrected)            │
 └────────────────────────────────────────────────────────────────┘
 ```
 
