@@ -130,15 +130,15 @@ Single Trip Lifecycle:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          DATA SOURCES                                    │
-│                                                                          │
-│  ┌──────────────────────┐           ┌──────────────────────┐           │
-│  │    Driver Apps       │           │     Rider Apps       │           │
-│  │  - iOS/Android       │           │  - iOS/Android       │           │
-│  │  - Location updates  │           │  - Trip requests     │           │
-│  │  - Status changes    │           │  - Ratings           │           │
-│  └──────────┬───────────┘           └──────────┬───────────┘           │
-└─────────────┼──────────────────────────────────┼──────────────────────┘
+│                          DATA SOURCES                                   │
+│                                                                         │
+│  ┌──────────────────────┐           ┌──────────────────────┐            │
+│  │    Driver Apps       │           │     Rider Apps       │            │
+│  │  - iOS/Android       │           │  - iOS/Android       │            │
+│  │  - Location updates  │           │  - Trip requests     │            │
+│  │  - Status changes    │           │  - Ratings           │            │
+│  └──────────┬───────────┘           └───────────┬──────────┘            │
+└─────────────┼───────────────────────────────────┼───────────────────────┘
               │                                   │
               │   500M events/day (2-3 TB JSON)   │
               │                                   │
@@ -146,25 +146,25 @@ Single Trip Lifecycle:
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                      INGESTION LAYER                                     │
-│                                                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │           Amazon Kinesis Data Streams                          │    │
-│  │  - Shards: 50-100 (auto-scaling)                              │    │
-│  │  - Partition Key: driver_id / rider_id                         │    │
-│  │  - Retention: 24 hours (for replay)                            │    │
-│  │  - Throughput: ~6,000 events/sec avg, 12,000 peak             │    │
-│  │                                                                │    │
-│  │  Event Envelope (Schema Evolution):                            │    │
-│  │  {                                                             │    │
-│  │    "event_name": "trip_started",                              │    │
-│  │    "event_timestamp": "2025-01-18T10:30:00.000Z",            │    │
-│  │    "schema_version": "v2.1",                                  │    │
-│  │    "payload": { ... actual event data ... }                   │    │
-│  │  }                                                             │    │
-│  └────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  Cost: ~$1,200/month (100 shards × 730 hours × $0.015)                 │
+│                      INGESTION LAYER                                    │
+│                                                                         │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │           Amazon Kinesis Data Streams                          │     │
+│  │  - Shards: 50-100 (auto-scaling)                               │     │
+│  │  - Partition Key: driver_id / rider_id                         │     │
+│  │  - Retention: 24 hours (for replay)                            │     │
+│  │  - Throughput: ~6,000 events/sec avg, 12,000 peak              │     │
+│  │                                                                │     │
+│  │  Event Envelope (Schema Evolution):                            │     │
+│  │  {                                                             │     │
+│  │    "event_name": "trip_started",                               │     │
+│  │    "event_timestamp": "2025-01-18T10:30:00.000Z",              │     │
+│  │    "schema_version": "v2.1",                                   │     │
+│  │    "payload": { ... actual event data ... }                    │     │
+│  │  }                                                             │     │
+│  └────────────────────────────────────────────────────────────────┘     │
+│                                                                         │
+│  Cost: ~$1,200/month (100 shards × 730 hours × $0.015)                  │
 └─────────────────────────────────────────────────────────────────────────┘
                               │
                               │
@@ -294,58 +294,58 @@ kinesis_config = {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                        BATCH PATH PIPELINE                               │
-│                                                                          │
-│  Step 1: Kinesis → S3 (Landing Zone)                                   │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Kinesis Data Firehose                                         │    │
-│  │  - Buffer: 15 minutes OR 128 MB (whichever first)             │    │
-│  │  - Compression: GZIP                                           │    │
-│  │  - Format: JSON (raw, as received)                            │    │
-│  │  - Output: s3://bucket/raw/events/year=YYYY/month=MM/day=DD/  │    │
-│  │            hour=HH/batch-XXX.json.gz                          │    │
-│  │                                                                │    │
-│  │  Why Firehose?                                                 │    │
-│  │  ✓ Fully managed (zero ops)                                   │    │
-│  │  ✓ Automatic batching, compression                            │    │
-│  │  ✓ Built-in retry logic                                       │    │
-│  │  ✓ Creates immutable raw data (audit trail)                   │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│                        BATCH PATH PIPELINE                              │
+│                                                                         │
+│  Step 1: Kinesis → S3 (Landing Zone)                                    │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  Kinesis Data Firehose                                         │     │
+│  │  - Buffer: 15 minutes OR 128 MB (whichever first)              │     │
+│  │  - Compression: GZIP                                           │     │
+│  │  - Format: JSON (raw, as received)                             │     │
+│  │  - Output: s3://bucket/raw/events/year=YYYY/month=MM/day=DD/   │     │
+│  │            hour=HH/batch-XXX.json.gz                           │     │
+│  │                                                                │     │
+│  │  Why Firehose?                                                 │     │
+│  │  ✓ Fully managed (zero ops)                                    │     │
+│  │  ✓ Automatic batching, compression                             │     │
+│  │  ✓ Built-in retry logic                                        │     │
+│  │  ✓ Creates immutable raw data (audit trail)                    │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 │                              │                                          │
 │                              │ Every hour (scheduled)                   │
 │                              ▼                                          │
-│  Step 2: JSON → Parquet Conversion (Bronze Layer)                      │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  AWS Glue Job (Spark)                                          │    │
-│  │  - Read: s3://bucket/raw/events/ (last 1-2 hours)             │    │
-│  │  - Transform: JSON → Parquet (columnar)                        │    │
-│  │  - Validation: Schema validation, null checks                  │    │
-│  │  - Deduplication: By event_id                                  │    │
-│  │  - Write: s3://bucket/bronze/events/event_date=YYYY-MM-DD/    │    │
-│  │                                                                │    │
-│  │  Why Parquet?                                                  │    │
-│  │  ✓ Columnar storage (10x faster queries)                      │    │
-│  │  ✓ Better compression (3-5x vs JSON)                          │    │
-│  │  ✓ Schema evolution support                                    │    │
-│  │  ✓ Native support in Spark, Athena, Redshift Spectrum        │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  Step 2: JSON → Parquet Conversion (Bronze Layer)                       │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  AWS Glue Job (Spark)                                          │     │
+│  │  - Read: s3://bucket/raw/events/ (last 1-2 hours)              │     │
+│  │  - Transform: JSON → Parquet (columnar)                        │     │
+│  │  - Validation: Schema validation, null checks                  │     │
+│  │  - Deduplication: By event_id                                  │     │
+│  │  - Write: s3://bucket/bronze/events/event_date=YYYY-MM-DD/     │     │
+│  │                                                                │     │
+│  │  Why Parquet?                                                  │     │
+│  │  ✓ Columnar storage (10x faster queries)                       │     │
+│  │  ✓ Better compression (3-5x vs JSON)                           │     │
+│  │  ✓ Schema evolution support                                    │     │
+│  │  ✓ Native support in Spark, Athena, Redshift Spectrum          │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 │                              │                                          │
 │                              │ Daily (midnight + 1 hour)                │
 │                              ▼                                          │
-│  Step 3: Event Sessionization (Silver Layer)                           │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  AWS Glue Job / EMR Spark                                      │    │
-│  │  - Read: Bronze events (last 24-48 hours)                      │    │
-│  │  - Group by trip_id                                            │    │
-│  │  - Sessionize: Stitch trip_requested → payment_processed       │    │
-│  │  - Business logic: Calculate duration, fare validation         │    │
-│  │  - Write: s3://bucket/silver/trips/trip_date=YYYY-MM-DD/      │    │
-│  │                                                                │    │
-│  │  Format: Delta Lake (ACID on S3)                               │    │
+│  Step 3: Event Sessionization (Silver Layer)                            │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  AWS Glue Job / EMR Spark                                      │     │
+│  │  - Read: Bronze events (last 24-48 hours)                      │     │
+│  │  - Group by trip_id                                            │     │
+│  │  - Sessionize: Stitch trip_requested → payment_processed       │     │
+│  │  - Business logic: Calculate duration, fare validation         │     │
+│  │  - Write: s3://bucket/silver/trips/trip_date=YYYY-MM-DD/       │     │
+│  │                                                                │     │
+│  │  Format: Delta Lake (ACID on S3)                               │     │
 │  │  ✓ ACID transactions                                           │    │
 │  │  ✓ Time travel (for debugging)                                 │    │
-│  │  ✓ MERGE support (for late-arriving data)                     │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  │  ✓ MERGE support (for late-arriving data)                      │    │
+│  └────────────────────────────────────────────────────────────────┘     │
 │                              │                                          │
 │                              │ Daily (after silver layer)               │
 │                              ▼                                          │
@@ -354,17 +354,17 @@ kinesis_config = {
 │  │  AWS Glue Job (Spark)                                          │    │
 │  │  - Read: Silver trips table                                    │    │
 │  │  - Aggregations:                                               │    │
-│  │    * Trips per hour (by city, by vehicle type)                │    │
-│  │    * Driver utilization (active hours, trips/hour)            │    │
+│  │    * Trips per hour (by city, by vehicle type)                 │    │
+│  │    * Driver utilization (active hours, trips/hour)             │    │
 │  │    * Surge pricing effectiveness                               │    │
-│  │  - Write: s3://bucket/gold/metrics/                           │    │
+│  │  - Write: s3://bucket/gold/metrics/                            │    │
 │  │                                                                │    │
 │  │  Also: Load to Redshift                                        │    │
 │  │  - COPY command from Gold S3                                   │    │
 │  │  - UPSERT via staging table                                    │    │
 │  │  - Optimize for BI queries                                     │    │
 │  └────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 #### Medallion Architecture (Bronze/Silver/Gold)
@@ -372,22 +372,22 @@ kinesis_config = {
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  BRONZE LAYER: Raw, Validated Events                                    │
-│                                                                          │
+│                                                                         │
 │  Purpose: Immutable source of truth                                     │
 │  Format: Parquet (from JSON)                                            │
 │  Partitioning: event_date=YYYY-MM-DD                                    │
 │  Retention: Forever (compliance)                                        │
 │  Schema: Exactly as received (envelope + payload)                       │
-│                                                                          │
+│                                                                         │
 │  Example: s3://bucket/bronze/events/event_date=2025-01-18/              │
 │  ├── part-00000.parquet                                                 │
 │  ├── part-00001.parquet                                                 │
 │  └── ...                                                                │
-│                                                                          │
-│  Transformations:                                                        │
-│  ✓ JSON → Parquet conversion                                           │
+│                                                                         │
+│  Transformations:                                                       │
+│  ✓ JSON → Parquet conversion                                            │
 │  ✓ Schema validation                                                    │
-│  ✓ Deduplication (by event_id)                                         │
+│  ✓ Deduplication (by event_id)                                          │
 │  ✓ Add processing_timestamp                                             │
 │  ✗ NO business logic                                                    │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -396,82 +396,82 @@ kinesis_config = {
                               ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  SILVER LAYER: Cleaned, Trip-Level Data                                 │
-│                                                                          │
+│                                                                         │
 │  Purpose: Clean, integrated trip records                                │
 │  Format: Delta Lake (Parquet + transaction log)                         │
 │  Partitioning: trip_date=YYYY-MM-DD                                     │
 │  Retention: 13 months in Redshift, forever in S3                        │
 │  Schema: Trip-centric (one row per trip)                                │
-│                                                                          │
+│                                                                         │
 │  Example: s3://bucket/silver/trips/trip_date=2025-01-18/                │
-│                                                                          │
+│                                                                         │
 │  Table: silver.trips                                                    │
-│  ┌──────────────┬──────────────────────────────────────────────┐      │
-│  │ trip_id      │ Primary key                                   │      │
-│  │ driver_id    │ Foreign key                                   │      │
-│  │ rider_id     │ Foreign key                                   │      │
-│  │ start_time   │ From trip_started event                       │      │
-│  │ end_time     │ From trip_completed event                     │      │
-│  │ start_lat    │ Pickup location                               │      │
-│  │ start_lon    │ Pickup location                               │      │
-│  │ end_lat      │ Dropoff location                              │      │
-│  │ end_lon      │ Dropoff location                              │      │
-│  │ fare_amount  │ From payment_processed event                  │      │
-│  │ duration_min │ Calculated: end_time - start_time             │      │
-│  │ distance_km  │ Calculated from coordinates                   │      │
-│  │ surge_mult   │ From trip_requested event                     │      │
-│  │ status       │ COMPLETED, CANCELLED, etc.                    │      │
-│  └──────────────┴──────────────────────────────────────────────┘      │
-│                                                                          │
-│  Transformations:                                                        │
-│  ✓ Event sessionization (group by trip_id)                             │
-│  ✓ Data pivoting (events → columns)                                    │
-│  ✓ Business rules (fare validation, duration calculation)              │
-│  ✓ Data cleansing (handle nulls, outliers)                            │
+│  ┌──────────────┬───────────────────────────────────────────────┐       │
+│  │ trip_id      │ Primary key                                   │       │
+│  │ driver_id    │ Foreign key                                   │       │
+│  │ rider_id     │ Foreign key                                   │       │
+│  │ start_time   │ From trip_started event                       │       │
+│  │ end_time     │ From trip_completed event                     │       │
+│  │ start_lat    │ Pickup location                               │       │
+│  │ start_lon    │ Pickup location                               │       │
+│  │ end_lat      │ Dropoff location                              │       │
+│  │ end_lon      │ Dropoff location                              │       │
+│  │ fare_amount  │ From payment_processed event                  │       │
+│  │ duration_min │ Calculated: end_time - start_time             │       │
+│  │ distance_km  │ Calculated from coordinates                   │       │
+│  │ surge_mult   │ From trip_requested event                     │       │
+│  │ status       │ COMPLETED, CANCELLED, etc.                    │       │
+│  └──────────────┴───────────────────────────────────────────────┘       │
+│                                                                         │
+│  Transformations:                                                       │
+│  ✓ Event sessionization (group by trip_id)                              │
+│  ✓ Data pivoting (events → columns)                                     │
+│  ✓ Business rules (fare validation, duration calculation)               │
+│  ✓ Data cleansing (handle nulls, outliers)                              │
 └─────────────────────────────────────────────────────────────────────────┘
                               │
                               │ (Aggregations, joins)
                               ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  GOLD LAYER: Business-Ready Metrics                                     │
-│                                                                          │
+│                                                                         │
 │  Purpose: Dimensional models for BI tools                               │
 │  Format: Parquet + Redshift tables                                      │
 │  Partitioning: metric_date, city_id                                     │
-│  Retention: 13 months (hot), 5 years (warm/cold)                       │
+│  Retention: 13 months (hot), 5 years (warm/cold)                        │
 │  Schema: Star schema (fact + dimension tables)                          │
-│                                                                          │
+│                                                                         │
 │  Tables:                                                                │
-│                                                                          │
-│  1. fact_hourly_metrics                                                │
-│     ┌─────────────────┬──────────────────────────────────┐            │
-│     │ metric_hour     │ Timestamp (hour granularity)     │            │
-│     │ city_id         │ Dimension key                    │            │
-│     │ vehicle_type    │ Dimension key                    │            │
-│     │ trips_count     │ Number of trips                  │            │
-│     │ total_fare      │ Sum of fares                     │            │
-│     │ avg_duration    │ Average trip duration            │            │
-│     │ surge_trips     │ Count of surged trips            │            │
-│     │ driver_hours    │ Total driver active hours        │            │
-│     │ utilization_pct │ Trips / available driver hours   │            │
-│     └─────────────────┴──────────────────────────────────┘            │
-│                                                                          │
+│                                                                         │
+│  1. fact_hourly_metrics                                                 │
+│     ┌─────────────────┬──────────────────────────────────┐              │
+│     │ metric_hour     │ Timestamp (hour granularity)     │              │
+│     │ city_id         │ Dimension key                    │              │
+│     │ vehicle_type    │ Dimension key                    │              │
+│     │ trips_count     │ Number of trips                  │              │
+│     │ total_fare      │ Sum of fares                     │              │
+│     │ avg_duration    │ Average trip duration            │              │
+│     │ surge_trips     │ Count of surged trips            │              │
+│     │ driver_hours    │ Total driver active hours        │              │
+│     │ utilization_pct │ Trips / available driver hours   │              │
+│     └─────────────────┴──────────────────────────────────┘              │
+│                                                                         │
 │  2. dim_city                                                            │
-│     ┌─────────────────┬──────────────────────────────────┐            │
-│     │ city_id         │ Primary key                      │            │
-│     │ city_name       │ San Francisco, New York, etc.    │            │
-│     │ country         │ USA, UK, etc.                    │            │
-│     │ timezone        │ America/Los_Angeles              │            │
-│     └─────────────────┴──────────────────────────────────┘            │
-│                                                                          │
+│     ┌─────────────────┬──────────────────────────────────┐              │
+│     │ city_id         │ Primary key                      │              │
+│     │ city_name       │ San Francisco, New York, etc.    │              │
+│     │ country         │ USA, UK, etc.                    │              │
+│     │ timezone        │ America/Los_Angeles              │              │
+│     └─────────────────┴──────────────────────────────────┘              │
+│                                                                         │
 │  3. dim_vehicle_type                                                    │
-│     ┌─────────────────┬──────────────────────────────────┐            │
-│     │ vehicle_type_id │ Primary key                      │            │
-│     │ type_name       │ uberX, uberXL, Black             │            │
-│     │ base_rate       │ Per-mile rate                    │            │
-│     └─────────────────┴──────────────────────────────────┘            │
-│                                                                          │
-│  Loaded to: Amazon Redshift for BI queries                             │
+│     ┌─────────────────┬──────────────────────────────────┐              │
+│     │ vehicle_type_id │ Primary key                      │              │
+│     │ type_name       │ uberX, uberXL, Black             │              │
+│     │ base_rate       │ Per-mile rate                    │              │
+│     └─────────────────┴──────────────────────────────────┘              │
+│                                                                         │
+│  Loaded to: Amazon Redshift for BI queries                              │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -483,57 +483,57 @@ kinesis_config = {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     STREAMING PATH PIPELINE                              │
-│                                                                          │
-│  Kinesis Data Streams                                                    │
-│         │                                                                │
-│         │ (Continuous consumption)                                       │
-│         ▼                                                                │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Flink on Kinesis Data Analytics                               │    │
-│  │                                                                 │    │
-│  │  Job: Trip Sessionization (Stateful Streaming)                 │    │
-│  │  ┌───────────────────────────────────────────────────────────┐ │    │
-│  │  │  1. Read from Kinesis                                      │ │    │
-│  │  │  2. Maintain in-memory state for active trips             │ │    │
-│  │  │  3. Update state as events arrive:                        │ │    │
-│  │  │     - trip_requested → Create trip record                 │ │    │
-│  │  │     - driver_assigned → Update trip.driver_id            │ │    │
-│  │  │     - trip_started → Update trip.start_time              │ │    │
-│  │  │     - trip_completed → Finalize trip                     │ │    │
-│  │  │  4. Windowing: 2-hour timeout (if no update)             │ │    │
-│  │  │  5. Output completed trips                                │ │    │
-│  │  └───────────────────────────────────────────────────────────┘ │    │
-│  │                                                                 │    │
-│  │  State Management:                                              │    │
-│  │  - State backend: RocksDB (managed by KDA)                     │    │
-│  │  - Checkpointing: Every 60 seconds to S3                       │    │
-│  │  - Watermarking: 10 minutes (for late arrivals)               │    │
-│  │                                                                 │    │
-│  │  Output:                                                        │    │
-│  │  - Micro-batches every 5-10 minutes                            │    │
-│  │  - Target: Redshift staging table                              │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│                     STREAMING PATH PIPELINE                             │
+│                                                                         │
+│  Kinesis Data Streams                                                   │
+│         │                                                               │
+│         │ (Continuous consumption)                                      │
+│         ▼                                                               │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  Flink on Kinesis Data Analytics                               │     │
+│  │                                                                │     │
+│  │  Job: Trip Sessionization (Stateful Streaming)                 │     │
+│  │  ┌───────────────────────────────────────────────────────────┐ │     │
+│  │  │  1. Read from Kinesis                                     │ │     │
+│  │  │  2. Maintain in-memory state for active trips             │ │     │
+│  │  │  3. Update state as events arrive:                        │ │     │
+│  │  │     - trip_requested → Create trip record                 │ │     │
+│  │  │     - driver_assigned → Update trip.driver_id             │ │     │
+│  │  │     - trip_started → Update trip.start_time               │ │     │
+│  │  │     - trip_completed → Finalize trip                      │ │     │
+│  │  │  4. Windowing: 2-hour timeout (if no update)              │ │     │
+│  │  │  5. Output completed trips                                │ │     │
+│  │  └───────────────────────────────────────────────────────────┘ │     │
+│  │                                                                │     │
+│  │  State Management:                                             │     │
+│  │  - State backend: RocksDB (managed by KDA)                     │     │
+│  │  - Checkpointing: Every 60 seconds to S3                       │     │
+│  │  - Watermarking: 10 minutes (for late arrivals)                │     │
+│  │                                                                │     │
+│  │  Output:                                                       │     │
+│  │  - Micro-batches every 5-10 minutes                            │     │
+│  │  - Target: Redshift staging table                              │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 │                              │                                          │
 │                              │ Every 5-10 minutes (micro-batch)         │
 │                              ▼                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Redshift Staging Table: streaming.trips_live                  │    │
-│  │  - Receives trip records from Flink                            │    │
-│  │  - COPY from S3 (Flink writes to S3 first)                    │    │
-│  │  - MERGE into production table every 10 minutes                │    │
-│  └────────────────────────────────────────────────────────────────┘    │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  Redshift Staging Table: streaming.trips_live                  │     │
+│  │  - Receives trip records from Flink                            │     │
+│  │  - COPY from S3 (Flink writes to S3 first)                     │     │
+│  │  - MERGE into production table every 10 minutes                │     │
+│  └────────────────────────────────────────────────────────────────┘     │
 │                              │                                          │
 │                              ▼                                          │
-│  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Redshift Production Table: public.trips_realtime              │    │
-│  │  - Queryable by BI tools                                       │    │
-│  │  - Data freshness: 5-15 minutes                                │    │
-│  │  - Retention: Last 24 hours                                    │    │
-│  │  - Reconciliation: Overwritten by batch job daily             │    │
-│  └────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  Cost: ~$700/month (KDA) + $300/month (Redshift micro-batches)         │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │  Redshift Production Table: public.trips_realtime              │     │
+│  │  - Queryable by BI tools                                       │     │
+│  │  - Data freshness: 5-15 minutes                                │     │
+│  │  - Retention: Last 24 hours                                    │     │
+│  │  - Reconciliation: Overwritten by batch job daily              │     │
+│  └────────────────────────────────────────────────────────────────┘     │
+│                                                                         │
+│  Cost: ~$700/month (KDA) + $300/month (Redshift micro-batches)          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
