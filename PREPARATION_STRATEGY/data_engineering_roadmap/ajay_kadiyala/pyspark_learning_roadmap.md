@@ -51,4 +51,4 @@ Logging, retries, monitoring, cost
 
 ---
 
-![Data Platform Architecture](./images/image.png)
+![Data Platform Architecture](../images/ajay_kadiyala.png)
