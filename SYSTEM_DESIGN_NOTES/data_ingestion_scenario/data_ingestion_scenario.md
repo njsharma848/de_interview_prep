@@ -402,7 +402,7 @@ spark.sql("""
 │  - Fast queries (<1 second)                 │
 │  - Fully indexed                            │
 │  - High compute capacity                    │
-│  - Data: 2023-01-01 to present             │
+│  - Data: 2023-01-01 to present              │
 └─────────────────────────────────────────────┘
                     ↑
                     │ Federated Query
