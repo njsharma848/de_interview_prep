@@ -8,7 +8,7 @@ Here is my complete Interview Experience.
 - Find the top 3 customers by total purchase amount per month using window functions.
 - Write a query to calculate net revenue per day, considering returns data.
 - PySpark: Join two DataFrames with different schemas using row numbers.
-Write a PySpark job to remove duplicate records from a large dataset efficiently.
+- Write a PySpark job to remove duplicate records from a large dataset efficiently.
 
 𝟮𝗻𝗱 𝗥𝗼𝘂𝗻𝗱 (𝗧𝗲𝗰𝗵 𝗟𝗲𝗮𝗱 𝗗𝗶𝘀𝗰𝘂𝘀𝘀𝗶𝗼𝗻)
 - Explain your current data pipeline architecture tools, flow, and data volume.
